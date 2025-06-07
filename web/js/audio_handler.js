@@ -58,29 +58,36 @@ export async function startAudioProcessing(micId, onAudioData) {
 
         // 2. Setup AudioContext and Worklet
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        console.log(`🎵 AudioContext: ${audioContext.sampleRate}Hz`);
         await audioContext.audioWorklet.addModule('/static/js/audio_processor.js');
         
-        const pcmProcessor = new AudioWorkletNode(audioContext, 'pcm-processor');
-        pcmProcessor.port.onmessage = (event) => {
-            // Forward the raw PCM data buffer to the provided callback
-            onAudioData(event.data);
+        // 3. Create a single mixed processor for better diarization
+        const mixedProcessor = new AudioWorkletNode(audioContext, 'mixed-processor');
+
+        // Handle mixed audio with volume-based speaker hints
+        mixedProcessor.port.onmessage = (event) => {
+            const { audioData, micLevel, systemLevel } = event.data;
+            
+            // Simple heuristic: if system audio is much louder, likely interviewer speaking
+            const speakerHint = systemLevel > micLevel * 2 ? 'system' : 'microphone';
+            onAudioData(audioData, speakerHint);
         };
 
-        // 3. Connect sources to the processor
+        // 4. Connect both sources to the mixed processor
         const micSource = audioContext.createMediaStreamSource(micStream);
-        micSource.connect(pcmProcessor);
-
         const systemSource = audioContext.createMediaStreamSource(systemStream);
-        systemSource.connect(pcmProcessor);
+        
+        micSource.connect(mixedProcessor);
+        systemSource.connect(mixedProcessor);
 
         // The video track from getDisplayMedia is not needed.
         systemStream.getVideoTracks().forEach(track => track.stop());
 
-        console.log("Audio processing started successfully.");
+        console.log("✅ Audio processing started successfully");
         return true;
 
     } catch (err) {
-        console.error("Error starting audio processing:", err);
+        console.error("❌ Error starting audio processing:", err);
         stopAudioProcessing();
         return false;
     }

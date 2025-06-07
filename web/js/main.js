@@ -171,7 +171,8 @@ async function startInterview() {
     switchView('live');
     
     // Define the callback that sends audio data over the socket
-    const onAudioData = (audioData) => {
+    const onAudioData = (audioData, speakerHint) => {
+        // Send raw audio data - let Deepgram handle diarization
         sendAudioChunk(audioData);
     };
 

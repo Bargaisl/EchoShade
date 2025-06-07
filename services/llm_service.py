@@ -25,6 +25,7 @@ def verify_groq_api_key():
 def get_ai_suggestion(question: str, context: dict) -> str:
     """
     Gets an AI-generated suggestion for an interview question.
+    Optimized for real-time speed.
     """
     try:
         client = Groq(api_key=settings.GROQ_API_KEY)
@@ -37,12 +38,15 @@ def get_ai_suggestion(question: str, context: dict) -> str:
                     "content": prompt,
                 }
             ],
-            model="llama3-8b-8192", # A fast and capable model
+            model="llama3-8b-8192",  # Fast model
+            temperature=0.3,  # Lower temperature for faster, more focused responses
+            max_tokens=150,   # Limit response length for speed
+            top_p=0.8,       # Focus on most likely tokens for speed
         )
         
         suggestion = chat_completion.choices[0].message.content
         return suggestion.strip()
         
     except Exception as e:
-        print(f"ERROR: Could not get AI suggestion: {e}")
+        print(f"❌ ERROR: Could not get AI suggestion: {e}")
         return "Error: Could not generate a suggestion at this time."

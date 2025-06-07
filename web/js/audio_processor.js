@@ -1,53 +1,61 @@
 // --- web/js/audio_processor.js ---
 
 /**
- * An AudioWorkletProcessor that converts float32 audio data to 16-bit PCM
- * and posts it back to the main thread.
+ * Mixed audio processor that combines microphone and system audio
+ * while tracking volume levels for speaker detection.
  */
-class PCMProcessor extends AudioWorkletProcessor {
+class MixedProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
+        this.micInputIndex = 0;
+        this.systemInputIndex = 1;
     }
 
     process(inputs, outputs, parameters) {
-        // The 'inputs' array contains an array of inputs, each with its own channels.
-        // We will mix all channels from all inputs down to a single mono channel.
-        const output = new Float32Array(inputs[0][0].length);
-        let channelCount = 0;
-
-        for (const input of inputs) {
-            for (const channel of input) {
-                if (channel.length === output.length) {
-                    for (let i = 0; i < channel.length; i++) {
-                        output[i] += channel[i];
-                    }
-                    channelCount++;
-                }
-            }
-        }
-
-        if (channelCount === 0) {
-            return true; // No data to process
-        }
+        // We expect two inputs: [0] = microphone, [1] = system audio
+        const micInput = inputs[0] && inputs[0][0] ? inputs[0][0] : new Float32Array(128);
+        const systemInput = inputs[1] && inputs[1][0] ? inputs[1][0] : new Float32Array(128);
         
-        // Average the mixed channels
-        for (let i = 0; i < output.length; i++) {
-            output[i] /= channelCount;
+        const frameLength = Math.max(micInput.length, systemInput.length);
+        if (frameLength === 0) return true;
+
+        // Mix the audio and calculate volume levels
+        const mixedAudio = new Float32Array(frameLength);
+        let micLevel = 0;
+        let systemLevel = 0;
+
+        for (let i = 0; i < frameLength; i++) {
+            const micSample = i < micInput.length ? micInput[i] : 0;
+            const systemSample = i < systemInput.length ? systemInput[i] : 0;
+            
+            // Mix the audio (simple addition with slight attenuation)
+            mixedAudio[i] = (micSample + systemSample) * 0.7;
+            
+            // Track volume levels
+            micLevel += Math.abs(micSample);
+            systemLevel += Math.abs(systemSample);
         }
-        
-        // Convert the mixed Float32Array to a 16-bit PCM Int16Array
-        const pcmData = new Int16Array(output.length);
-        for (let i = 0; i < output.length; i++) {
-            const s = Math.max(-1, Math.min(1, output[i]));
+
+        // Average the volume levels
+        micLevel /= frameLength;
+        systemLevel /= frameLength;
+
+        // Convert to 16-bit PCM
+        const pcmData = new Int16Array(frameLength);
+        for (let i = 0; i < frameLength; i++) {
+            const s = Math.max(-1, Math.min(1, mixedAudio[i]));
             pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
 
-        // Post the raw PCM data buffer back to the main thread.
-        // The second argument is a list of transferable objects.
-        this.port.postMessage(pcmData.buffer, [pcmData.buffer]);
+        // Send mixed audio with volume levels for speaker detection
+        this.port.postMessage({
+            audioData: pcmData.buffer,
+            micLevel: micLevel,
+            systemLevel: systemLevel
+        }, [pcmData.buffer]);
 
-        return true; // Keep the processor alive and running
+        return true;
     }
 }
 
-registerProcessor('pcm-processor', PCMProcessor);
+registerProcessor('mixed-processor', MixedProcessor);

@@ -47,7 +47,7 @@ class DeepgramManager:
         
         # Setup Deepgram client
         config = DeepgramClientOptions(
-            verbose=settings.LOG_LEVEL,
+            verbose=False,  # Disable verbose logging to reduce spam
             options={"keepalive": "true"}
         )
         self.deepgram = DeepgramClient(settings.DEEPGRAM_API_KEY, config)
@@ -61,6 +61,7 @@ class DeepgramManager:
         self.dg_connection.on(LiveTranscriptionEvents.Error, self.on_error)
         self.dg_connection.on(LiveTranscriptionEvents.Close, self.on_close)
 
+        # Simplified working configuration for live streaming with diarization
         options = LiveOptions(
             model="nova-2",
             language="en-US",
@@ -68,50 +69,82 @@ class DeepgramManager:
             encoding="linear16",
             channels=1,
             sample_rate=48000,
-            # Enable Diarization
-            diarize=True, 
+            # Basic diarization - keep it simple for live streaming
+            diarize=True,
+            # Essential features only
+            punctuate=True,
+            interim_results=False,  # Only final results
         )
         
         try:
             await self.dg_connection.start(options)
-            print("INFO: Deepgram connection started.")
+            print("✅ Deepgram connection started successfully")
         except Exception as e:
-            print(f"ERROR: Could not start Deepgram connection: {e}")
+            print(f"❌ ERROR: Could not start Deepgram connection: {e}")
 
     async def on_open(self, *args, **kwargs):
-        print("INFO: Deepgram connection opened.")
+        print("🔗 Deepgram connection opened")
         self.is_connected = True
 
     async def on_message(self, *args, **kwargs):
         if self.stop_event.is_set():
             return
-        result = kwargs['result']
-        transcript = result.channel.alternatives[0].transcript
-        if len(transcript) > 0:
-            await self.transcript_callback({
-                "speaker": result.channel.json.get('speaker', 0),
-                "transcript": transcript
-            })
+        
+        try:
+            result = kwargs['result']
+            
+            # Check if result has the expected structure and non-empty transcript
+            if (hasattr(result, 'channel') and 
+                hasattr(result.channel, 'alternatives') and 
+                len(result.channel.alternatives) > 0):
+                
+                alternative = result.channel.alternatives[0]
+                transcript = alternative.transcript
+                
+                if len(transcript.strip()) > 0:  # Only process non-empty transcripts
+                    # Get speaker from words array (Deepgram's diarization format)
+                    speaker = 0  # Default to candidate
+                    
+                    # For live streaming, speaker info is in the words array
+                    if hasattr(alternative, 'words') and len(alternative.words) > 0:
+                        # Use the speaker of the first word (they should all be the same speaker for one utterance)
+                        first_word = alternative.words[0]
+                        if hasattr(first_word, 'speaker') and first_word.speaker is not None:
+                            speaker = first_word.speaker
+                        else:
+                            # Fallback: try to access speaker as dictionary key
+                            if hasattr(first_word, '__getitem__') and 'speaker' in first_word:
+                                speaker = first_word['speaker']
+                    
+                    transcript_data = {
+                        "speaker": speaker,
+                        "transcript": transcript.strip()
+                    }
+                    print(f"📝 TRANSCRIPT: Speaker {speaker} - '{transcript.strip()}'")
+                    await self.transcript_callback(transcript_data)
+                        
+        except Exception as e:
+            print(f"❌ ERROR: Exception in transcript processing: {e}")
 
     async def on_error(self, *args, **kwargs):
         if self.stop_event.is_set():
             return
         error = kwargs['error']
-        print(f"ERROR: Deepgram error: {error}")
+        print(f"❌ Deepgram error: {error}")
 
     async def on_close(self, *args, **kwargs):
-        print("INFO: Deepgram connection closed.")
+        print("🔌 Deepgram connection closed")
         self.is_connected = False
 
-    async def send_audio(self, audio_chunk):
+    async def send_audio(self, audio_chunk, source='unknown'):
         """Sends an audio chunk to Deepgram."""
         if self.is_connected and self.dg_connection and not self.stop_event.is_set():
             await self.dg_connection.send(audio_chunk)
 
     async def finish(self):
         """Signals the connection to close and finishes it."""
-        print("INFO: Signaling Deepgram connection to finish.")
+        print("🛑 Closing Deepgram connection...")
         self.stop_event.set()
         if self.dg_connection:
             await self.dg_connection.finish()
-            print("INFO: Finished Deepgram connection.")
+            print("✅ Deepgram connection closed successfully")

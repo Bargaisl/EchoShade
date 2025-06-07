@@ -13,7 +13,7 @@ async def send_json(websocket: WebSocket, type: str, payload: dict):
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    print("INFO: WebSocket connection established.")
+    print("🔗 WebSocket connection established")
     
     dg_manager = None
     onboarding_context = {}
@@ -25,19 +25,23 @@ async def websocket_endpoint(websocket: WebSocket):
             await send_json(websocket, "transcript_update", data)
 
             # Now, check if it's the interviewer speaking and get a suggestion
-            # Note: Diarization might label speakers differently. We assume '1' is the interviewer for now.
+            # With our new system: 0 = candidate, 1 = interviewer
             if data.get('speaker') == 1 and data.get('transcript'):
-                print(f"INFO: Interviewer said: {data['transcript']}")
+                print(f"🎤 INTERVIEWER: {data['transcript']}")
                 suggestion = get_ai_suggestion(data['transcript'], onboarding_context)
                 await send_json(websocket, "suggestion_update", {"suggestion": suggestion})
+                print(f"🤖 AI SUGGESTION: {suggestion}")
+            elif data.get('speaker') == 0 and data.get('transcript'):
+                print(f"👤 CANDIDATE: {data['transcript']}")
+                # No AI suggestion needed for candidate speech
         except WebSocketDisconnect:
-            print("INFO: Client disconnected while sending transcript/suggestion.")
+            print("🔌 Client disconnected while sending transcript/suggestion")
         except Exception as e:
-            print(f"ERROR: Error in on_transcript callback: {e}")
+            print(f"❌ ERROR: Error in transcript callback: {e}")
 
     try:
         # 1. Immediately check the keys upon connection
-        print("INFO: Verifying API keys...")
+        print("🔑 Verifying API keys...")
         is_deepgram_valid = verify_deepgram_api_key()
         is_groq_valid = verify_groq_api_key()
         await send_json(websocket, "api_key_status", {"service": "deepgram", "valid": is_deepgram_valid})
@@ -49,24 +53,31 @@ async def websocket_endpoint(websocket: WebSocket):
             if 'text' in message:
                 data = json.loads(message['text'])
                 if data['type'] == 'start_interview':
-                    print("INFO: Received 'start_interview' message.")
+                    print("🎬 Starting interview session...")
                     onboarding_context = data.get('payload', {})
                     dg_manager = DeepgramManager(on_transcript)
                     await dg_manager.start()
                 elif data['type'] == 'end_interview':
-                    print("INFO: Received 'end_interview' message.")
+                    print("🛑 Ending interview session...")
                     if dg_manager:
                         await dg_manager.finish()
                     break  # End the session
             elif 'bytes' in message:
                 if dg_manager:
-                    await dg_manager.send_audio(message['bytes'])
+                    audio_data = message['bytes']
+                    if len(audio_data) > 0:
+                        # Send raw audio directly to Deepgram for diarization
+                        await dg_manager.send_audio(audio_data)
+                    else:
+                        print("⚠️ WARNING: Received empty audio data")
+                else:
+                    print("⚠️ WARNING: Received audio but dg_manager is None")
 
     except WebSocketDisconnect:
-        print("INFO: WebSocket connection closed by client.")
+        print("🔌 WebSocket connection closed by client")
     except Exception as e:
-        print(f"ERROR: An error occurred in the WebSocket: {e}")
+        print(f"❌ ERROR: WebSocket error: {e}")
     finally:
         if dg_manager:
             await dg_manager.finish()
-        print("INFO: Cleaned up WebSocket resources.")
+        print("🧹 WebSocket resources cleaned up")
