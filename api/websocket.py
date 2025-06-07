@@ -1,7 +1,7 @@
 import asyncio
 import json
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from services.llm_service import verify_groq_api_key, get_ai_suggestion
+from services.llm_service import verify_groq_api_key, get_ai_answer, process_candidate_response, clear_conversation_history
 from services.stt_service import verify_deepgram_api_key, DeepgramManager
 
 router = APIRouter()
@@ -21,22 +21,38 @@ async def websocket_endpoint(websocket: WebSocket):
     async def on_transcript(data):
         """Callback function to handle transcripts from Deepgram."""
         try:
-            # First, send the raw transcript to the client for display
+            # Always send transcript updates to client (both interim and final)
             await send_json(websocket, "transcript_update", data)
 
-            # Swap the speaker assignments since they're backwards:
-            # Speaker 0 = System audio (INTERVIEWER)  
-            # Speaker 1 = Microphone (CANDIDATE)
-            if data.get('speaker') == 0 and data.get('transcript'):
-                print(f"🎤 INTERVIEWER: {data['transcript']}")
-                suggestion = get_ai_suggestion(data['transcript'], onboarding_context)
-                await send_json(websocket, "suggestion_update", {"suggestion": suggestion})
-                print(f"🤖 AI SUGGESTION: {suggestion}")
-            elif data.get('speaker') == 1 and data.get('transcript'):
-                print(f"👤 CANDIDATE: {data['transcript']}")
-                # No AI suggestion needed for candidate speech
+            # Only generate AI responses for final results to avoid duplicates
+            is_final = data.get('is_final', True)
+            
+            if is_final:
+                # Handle different speakers with conversation tracking
+                # Speaker 0 = System audio (INTERVIEWER)  
+                # Speaker 1 = Microphone (CANDIDATE)
+                if data.get('speaker') == 0 and data.get('transcript'):
+                    interviewer_question = data['transcript']
+                    print(f"🎤 INTERVIEWER (FINAL): {interviewer_question}")
+                    
+                    # Generate AI answer (not just suggestion)
+                    answer = get_ai_answer(interviewer_question, onboarding_context)
+                    await send_json(websocket, "ai_answer", {"answer": answer})
+                    print(f"🤖 AI ANSWER: {answer}")
+                    
+                elif data.get('speaker') == 1 and data.get('transcript'):
+                    candidate_response = data['transcript']
+                    print(f"👤 CANDIDATE (FINAL): {candidate_response}")
+                    
+                    # Process candidate response for conversation context
+                    process_candidate_response(candidate_response)
+            else:
+                # For interim results, just log without generating AI responses
+                speaker_type = "INTERVIEWER" if data.get('speaker') == 0 else "CANDIDATE"
+                print(f"⏳ {speaker_type} (interim): {data.get('transcript', '')}")
+                
         except WebSocketDisconnect:
-            print("🔌 Client disconnected while sending transcript/suggestion")
+            print("🔌 Client disconnected while sending transcript/answer")
         except Exception as e:
             print(f"❌ ERROR: Error in transcript callback: {e}")
 
@@ -56,6 +72,18 @@ async def websocket_endpoint(websocket: WebSocket):
                 if data['type'] == 'start_interview':
                     print("🎬 Starting interview session...")
                     onboarding_context = data.get('payload', {})
+                    
+                    # Clear any previous conversation history
+                    clear_conversation_history()
+                    print("🧹 Conversation history cleared for new interview")
+                    
+                    # Log the context we received for debugging
+                    print(f"📋 Interview context loaded:")
+                    print(f"   - Name: {onboarding_context.get('name', 'Not provided')}")
+                    print(f"   - Company: {onboarding_context.get('company', 'Not provided')}")
+                    print(f"   - Role: {onboarding_context.get('role', 'Not provided')}")
+                    print(f"   - Focus areas: {onboarding_context.get('focus', [])}")
+                    
                     dg_manager = DeepgramManager(on_transcript)
                     await dg_manager.start()
                 elif data['type'] == 'end_interview':

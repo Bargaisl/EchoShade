@@ -7,6 +7,13 @@ class Settings(BaseSettings):
     DEEPGRAM_API_KEY: str
     GROQ_API_KEY: str
     LOG_LEVEL: str = "INFO"
+    
+    # AI Configuration
+    TRACK_CANDIDATE_RESPONSES: bool = True  # Track what candidate says for better context
+    INCLUDE_CONVERSATION_HISTORY: bool = True  # Include recent conversation in prompts
+    MAX_CONVERSATION_HISTORY: int = 5  # Number of recent exchanges to remember
+    GENERATE_FULL_ANSWERS: bool = True  # Generate complete answers, not just suggestions
+    PERSONALIZE_ANSWERS: bool = True  # Use candidate profile in answers
 
     model_config = SettingsConfigDict(
         env_file=".env",

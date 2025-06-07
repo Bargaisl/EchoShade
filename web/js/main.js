@@ -148,9 +148,13 @@ function connectWebSocket() {
             }
             checkAllSystemsGo();
         } else if (data.type === 'transcript_update') {
-            console.log('TRANSCRIPT:', data.payload);
+            console.log('📝 TRANSCRIPT:', data.payload);
+        } else if (data.type === 'ai_answer') {
+            console.log('🤖 AI ANSWER:', data.payload.answer);
+            // TODO: Display the AI answer in the UI (Phase 2c)
         } else if (data.type === 'suggestion_update') {
-            console.log('SUGGESTION:', data.payload.suggestion);
+            // Legacy support for old suggestion format
+            console.log('🤖 SUGGESTION:', data.payload.suggestion);
         }
     };
 }
