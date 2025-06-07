@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str
     LOG_LEVEL: str = "INFO"
     
+    # Development Mode - Controls debugging features
+    DEV_MODE: bool = True
+    
     # AI Configuration
     TRACK_CANDIDATE_RESPONSES: bool = True  # Track what candidate says for better context
     INCLUDE_CONVERSATION_HISTORY: bool = True  # Include recent conversation in prompts

@@ -131,8 +131,10 @@ As a key member of our team, you will have the opportunity to shape the future o
 Apply Today:`
 };
 
+import { devLog } from './config.js';
+
 export function autofillForTesting(onboardingForm) {
-    console.log("Autofilling form for testing...");
+    devLog("Autofilling form for testing...");
     onboardingForm.name.value = devData.name;
     onboardingForm.company.value = devData.company;
     onboardingForm.role.value = devData.role;

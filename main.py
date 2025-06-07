@@ -6,17 +6,18 @@ from fastapi.staticfiles import StaticFiles
 from threading import Thread
 import window_manager  # Our new module for capture protection
 import os
-from api import websocket
+from api import websocket, config_api
+from core.config import settings
 
-# --- Development Flag ---
-# Set to True to disable screen capture protection for debugging the UI.
-# Set to False for production behavior.
-DEV_MODE = True
+# --- Development Flag (now from .env) ---
+# DEV_MODE is now controlled via .env file - see core/config.py
+DEV_MODE = settings.DEV_MODE
 
 
 # --- FastAPI App Setup ---
 app = FastAPI()
 app.include_router(websocket.router)
+app.include_router(config_api.router)
 
 # Mount the 'web' directory to serve static files (CSS, JS)
 # This makes files in 'web/css' and 'web/js' available under '/static/css' and '/static/js'
@@ -55,5 +56,5 @@ if __name__ == '__main__':
     else:
         print("INFO: DEV_MODE is True. Skipping screen capture protection.")
 
-    # 6. Start the pywebview event loop
-    webview.start(debug=True)
+    # 6. Start the pywebview event loop with debug based on DEV_MODE
+    webview.start(debug=DEV_MODE)

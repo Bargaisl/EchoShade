@@ -2,6 +2,8 @@
 // This module handles all interactions with the Web Media APIs
 // for capturing and processing audio via an AudioWorklet.
 
+import { devLog, devError } from './config.js';
+
 let audioContext = null;
 let micStream = null;
 let systemStream = null;
@@ -32,7 +34,7 @@ export async function setupMicrophone() {
         micSelect.disabled = false;
         return true;
     } catch (err) {
-        console.error("Error setting up microphone:", err);
+        devError("Error setting up microphone:", err);
         return false;
     }
 }
@@ -58,7 +60,7 @@ export async function startAudioProcessing(micId, onAudioData) {
 
         // 2. Setup AudioContext and Worklet
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        console.log(`🎵 AudioContext: ${audioContext.sampleRate}Hz`);
+        console.log(`🎵 AudioContext: ${audioContext.sampleRate}Hz`); // Keep this as it's important for debugging
         await audioContext.audioWorklet.addModule('/static/js/audio_processor.js');
         
         // 3. Create a single mixed processor for better diarization
@@ -83,7 +85,7 @@ export async function startAudioProcessing(micId, onAudioData) {
         // The video track from getDisplayMedia is not needed.
         systemStream.getVideoTracks().forEach(track => track.stop());
 
-        console.log("✅ Audio processing started successfully");
+        devLog("✅ Audio processing started successfully");
         return true;
 
     } catch (err) {

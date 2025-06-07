@@ -1,8 +1,9 @@
 import { setupMicrophone, startAudioProcessing, stopAudioProcessing } from './audio_handler.js';
 import { autofillForTesting } from './dev.js';
+import { loadConfig, isDev, devLog, devWarn, devError } from './config.js';
 
-// --- Config ---
-const DEV_MODE = true; // Enables developer shortcuts
+// --- Config (now loaded from backend) ---
+// DEV_MODE is now centralized and loaded from .env via backend API
 
 // --- State Management ---
 const appState = {
@@ -74,7 +75,7 @@ function handleOnboarding() {
         focus: focus,
         objectives: onboardingForm.objectives.value,
     };
-    console.log("Onboarding data captured:", appState.onboardingData);
+    devLog("Onboarding data captured:", appState.onboardingData);
     switchView('preflight');
     runPreFlightChecks();
 }
@@ -134,7 +135,7 @@ function connectWebSocket() {
     socket.onmessage = function(event) {
         const data = JSON.parse(event.data);
         // We will add logging here for the transcript and suggestion messages
-        console.log("Received from backend:", data);
+        devLog("Received from backend:", data);
 
         if (data.type === 'api_key_status') {
             const { service, valid } = data.payload;
@@ -148,13 +149,13 @@ function connectWebSocket() {
             }
             checkAllSystemsGo();
         } else if (data.type === 'transcript_update') {
-            console.log('📝 TRANSCRIPT:', data.payload);
+            devLog('📝 TRANSCRIPT:', data.payload);
         } else if (data.type === 'ai_answer') {
-            console.log('🤖 AI ANSWER:', data.payload.answer);
+            devLog('🤖 AI ANSWER:', data.payload.answer);
             // TODO: Display the AI answer in the UI (Phase 2c)
         } else if (data.type === 'suggestion_update') {
             // Legacy support for old suggestion format
-            console.log('🤖 SUGGESTION:', data.payload.suggestion);
+            devLog('🤖 SUGGESTION:', data.payload.suggestion);
         }
     };
 }
@@ -201,7 +202,13 @@ function endInterview() {
 proceedButton.addEventListener('click', handleOnboarding);
 startButton.addEventListener('click', startInterview);
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+    // Load configuration from backend first
+    await loadConfig();
+    
+    // Setup developer features if in dev mode
+    setupDeveloperShortcuts();
+    
     // Remove the temporary visualizer elements since they are no longer used
     const micVolume = document.getElementById('mic-volume');
     const systemVolume = document.getElementById('system-volume');
@@ -214,12 +221,16 @@ window.addEventListener('DOMContentLoaded', () => {
     switchView('onboarding');
 });
 
-// --- Developer Shortcut ---
-if (DEV_MODE) {
-    window.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && e.key === 'j') {
-            e.preventDefault();
-            autofillForTesting(onboardingForm);
-        }
-    });
+// --- Developer Shortcuts (controlled by centralized DEV_MODE) ---
+function setupDeveloperShortcuts() {
+    if (isDev()) {
+        devLog('🛠️ Developer shortcuts enabled');
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'j') {
+                e.preventDefault();
+                devLog('🛠️ Auto-filling form via Ctrl+J');
+                autofillForTesting(onboardingForm);
+            }
+        });
+    }
 }
