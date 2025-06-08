@@ -17,44 +17,63 @@ body {
     padding: 0;
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    display: flex;
+    flex-direction: column;
 }
 
 .view {
-    position: absolute;
+    display: none;
     width: 100%;
     min-height: 100vh;
-    padding: 0rem;
+    padding: 1rem;
     box-sizing: border-box;
-    display: flex;
     justify-content: center;
     align-items: flex-start;
-    opacity: 0;
-    transform: scale(0.98);
-    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-    pointer-events: none;
     overflow-y: auto;
+    flex: 1;
 }
 
 .view.active {
-    opacity: 1;
-    transform: scale(1);
-    pointer-events: auto;
+    display: flex;
 }
 
-#live-view {
+#live-view.active {
     position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* Specific styling for preflight view */
+#preflight-view.active {
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+}
+
+#preflight-view .container {
+    max-height: none;
+    margin: auto;
 }
 
 .container {
     background: var(--surface-color);
-    padding: 1.5rem;
+    padding: 2.5rem;
     border-radius: var(--border-radius);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     width: 100%;
     max-width: 900px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    margin: 1rem auto;
+    margin: 0 auto;
     box-sizing: border-box;
+}
+
+/* Add margin only for non-preflight views */
+#onboarding-view .container {
+    margin: 2rem auto;
 }
 
 h1 {
@@ -63,89 +82,131 @@ h1 {
     margin-bottom: 0.5em;
     color: var(--highlight-color);
     font-weight: 600;
-    font-size: 1.8rem;
+    font-size: 2rem;
 }
 
 .subtitle {
     text-align: center;
     margin-top: 0;
-    margin-bottom: 1.5em;
+    margin-bottom: 2.5em;
     color: var(--subtle-text-color);
-    font-size: 0.95rem;
+    font-size: 1rem;
 }
 
 /* --- Onboarding Form --- */
 fieldset {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--border-radius);
-    padding: 1rem;
-    margin-bottom: 1rem;
+    border: none;
+    padding: 1.5rem 0;
+    margin-bottom: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 legend {
     color: var(--highlight-color);
     font-weight: 500;
-    padding: 0 0.5em;
-    font-size: 0.9rem;
+    padding: 0 1em;
+    margin-left: -1em;
+    font-size: 1.1rem;
 }
 
 input[type="text"],
-textarea {
+textarea,
+select {
     width: 100%;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0,0,0,0.3);
     border: 1px solid transparent;
-    border-radius: 6px;
-    padding: 0.7rem;
+    border-radius: 8px;
+    padding: 0.9rem;
     color: var(--text-color);
-    margin-bottom: 0.8rem;
+    margin-bottom: 1rem;
     box-sizing: border-box;
-    transition: border-color 0.2s;
-    font-size: 0.9rem;
+    transition: all 0.2s;
+    font-size: 1rem;
 }
 
 input[type="text"]:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
     outline: none;
     border-color: var(--highlight-color);
+    box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.3);
 }
 
+input::placeholder,
+textarea::placeholder {
+    color: #6a708a;
+}
+
+input:required:invalid,
+textarea:required:invalid,
+select:required:invalid {
+    border-left: 4px solid var(--red);
+}
+
+input:required:valid,
+textarea:required:valid,
+select:required:valid {
+    border-left: 4px solid var(--green);
+}
+
+
 textarea {
-    min-height: 80px;
+    min-height: 100px;
     resize: vertical;
 }
 
 .checkbox-group {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
 }
 
 .checkbox-group label {
     display: flex;
     align-items: center;
-    gap: 0.5em;
+    gap: 0.7em;
     cursor: pointer;
-    font-size: 0.9rem;
-    flex: 1;
-    min-width: 200px;
+    font-size: 0.95rem;
+    padding: 0.8rem 1rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.checkbox-group label:hover {
+    background: rgba(0,0,0,0.4);
+}
+
+.ai-config-group {
+    display: flex;
+    gap: 1rem;
 }
 
 /* --- Pre-Flight Check --- */
+#checks {
+    background-color: rgba(0,0,0,0.2);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
 .check-item {
     display: flex;
     align-items: center;
-    padding: 0.8rem 1rem;
-    margin-bottom: 0.5rem;
-    background: rgba(0,0,0,0.2);
-    border-radius: 6px;
-    font-size: 0.95rem;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 1.05rem;
+}
+.check-item:last-child {
+    border-bottom: none;
 }
 
 .indicator {
-    margin-right: 1rem;
-    font-size: 1.1rem;
+    margin-right: 1.5rem;
+    font-size: 1.5rem;
     line-height: 1;
-    min-width: 1.5rem;
+    min-width: 2rem;
+    text-align: center;
 }
 
 #mic-select {
@@ -153,39 +214,55 @@ textarea {
     background: var(--surface-color);
     color: var(--text-color);
     border: 1px solid var(--highlight-color);
-    border-radius: 4px;
-    padding: 0.3rem 0.5rem;
-    font-size: 0.85rem;
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
 }
 
 /* --- Buttons --- */
 button {
     display: block;
     width: 100%;
-    padding: 0.9rem;
-    font-size: 1rem;
+    padding: 1rem;
+    font-size: 1.1rem;
     font-weight: 500;
     color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     margin-top: 1.5rem;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
+    transition: all 0.2s;
     box-sizing: border-box;
 }
 
 button:not(:disabled):hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
 }
 
 #proceed-to-checks {
-    background-color: var(--highlight-color);
+    background: linear-gradient(45deg, #6772ff, #7aa2f7);
+}
+
+.preflight-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.preflight-buttons button {
+    margin-top: 0;
 }
 
 #start-interview-button {
-    background-color: var(--green);
+    background: linear-gradient(45deg, #28a745, #9ece6a);
 }
+
+#back-to-onboarding-btn {
+    background: linear-gradient(45deg, #6c757d, #a9b1d6);
+    color: var(--bg-color);
+}
+
 
 button:disabled {
     background-color: #5c6370;
@@ -196,9 +273,12 @@ button:disabled {
 /* --- Responsive Design --- */
 @media (max-width: 768px) {
     .container {
-        margin: 0.5rem;
-        padding: 1rem;
-        max-width: none;
+        padding: 1.5rem;
+        margin: 0 auto;
+    }
+    
+    #onboarding-view .container {
+        margin: 1rem auto;
     }
     
     .view {
@@ -206,108 +286,22 @@ button:disabled {
     }
     
     h1 {
-        font-size: 1.5rem;
+        font-size: 1.8rem;
     }
     
     .checkbox-group {
-        flex-direction: column;
-        gap: 0.8rem;
-    }
-    
-    .checkbox-group label {
-        min-width: auto;
-    }
-    
-    fieldset {
-        padding: 0.8rem;
-        margin-bottom: 0.8rem;
-    }
-    
-    input[type="text"],
-    textarea {
-        padding: 0.6rem;
-        font-size: 0.85rem;
-    }
-    
-    button {
-        padding: 0.8rem;
-        font-size: 0.95rem;
+        grid-template-columns: 1fr;
     }
 }
 
-@media (max-width: 480px) {
-    .container {
-        margin: 0.25rem;
-        padding: 0.8rem;
+@media (max-height: 600px) {
+    #preflight-view.active {
+        align-items: flex-start;
+        padding-top: 2rem;
     }
     
-    h1 {
-        font-size: 1.3rem;
+    #checks {
+        max-height: 40vh;
+        overflow-y: auto;
     }
-    
-    .subtitle {
-        font-size: 0.9rem;
-        margin-bottom: 1rem;
-    }
-    
-    fieldset {
-        padding: 0.6rem;
-    }
-    
-    .check-item {
-        padding: 0.6rem 0.8rem;
-        font-size: 0.9rem;
-    }
-}
-/* --- Live Interview View --- */
-.live-container {
-    width: 100%;
-    max-width: 900px;
-    padding: 1.5rem;
-}
-
-.audio-indicators {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 2rem;
-    background: rgba(0,0,0,0.2);
-    padding: 1rem;
-    border-radius: var(--border-radius);
-}
-
-.indicator-group {
-    text-align: center;
-}
-
-.indicator-group label {
-    font-size: 0.9rem;
-    color: var(--subtle-text-color);
-}
-
-.volume-meter {
-    width: 100px;
-    height: 20px;
-    background-color: #333;
-    border-radius: 4px;
-    margin-top: 0.5rem;
-    transform-origin: left;
-    transition: background-color 0.1s;
-    background: linear-gradient(to right, var(--green) 0%, #333 0%);
-}
-.speaker-select {
-    margin-left: auto;
-    background: var(--surface-color);
-    color: var(--text-color);
-    border: 1px solid var(--highlight-color);
-    border-radius: 4px;
-    padding: 0.3rem 0.5rem;
-    font-size: 0.85rem;
-}
-
-.instruction-text {
-    font-size: 0.8rem;
-    color: var(--subtle-text-color);
-    text-align: center;
-    margin: -0.5rem 0 1rem 0;
-    padding: 0 1rem;
 }

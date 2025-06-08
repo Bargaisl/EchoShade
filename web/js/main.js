@@ -51,6 +51,7 @@ const checks = {
 const micSelect = document.getElementById('mic-select');
 const proceedButton = document.getElementById('proceed-to-checks');
 const startButton = document.getElementById('start-interview-button');
+const backButton = document.getElementById('back-to-onboarding-btn');
 
 
 // --- View Management ---
@@ -73,9 +74,37 @@ function updateCheckStatus(checkElement, status, text) {
 }
 
 function handleOnboarding() {
-    const focus = Array.from(onboardingForm.focusCheckboxes)
-        .filter(cb => cb.checked)
-        .map(cb => cb.value);
+    const requiredFields = {
+        'user-name': 'Name',
+        'user-company': 'Company',
+        'user-role': 'Role',
+        'user-resume': 'Resume',
+        'ai-provider-select': 'AI Provider',
+        'ai-model-select': 'AI Model'
+    };
+
+    let allValid = true;
+
+    for (const [id, name] of Object.entries(requiredFields)) {
+        const element = document.getElementById(id);
+        if (!element.value) {
+            alert(`${name} is a required field.`);
+            allValid = false;
+            break;
+        }
+    }
+
+    const focusCheckboxes = Array.from(onboardingForm.focusCheckboxes).filter(cb => cb.checked);
+    if (focusCheckboxes.length === 0) {
+        alert('Please select at least one Interview Focus.');
+        allValid = false;
+    }
+
+    if (!allValid) {
+        return;
+    }
+
+    const focus = focusCheckboxes.map(cb => cb.value);
 
     appState.onboardingData = {
         name: onboardingForm.name.value,
@@ -85,7 +114,7 @@ function handleOnboarding() {
         focus: focus,
         objectives: onboardingForm.objectives.value,
     };
-    
+
     appState.selectedProvider.name = onboardingForm.providerSelect.value;
     appState.selectedProvider.model = onboardingForm.modelSelect.value;
 
@@ -257,8 +286,38 @@ async function loadAiProviders() {
             option.textContent = p.name;
             providerSelect.appendChild(option);
         });
+        
+        // Use requestAnimationFrame to ensure DOM is ready
+        requestAnimationFrame(() => {
+            setDefaultAIProvider();
+        });
     } catch (error) {
         console.error("Failed to load AI providers:", error);
+    }
+}
+
+function setDefaultAIProvider() {
+    try {
+        const defaultProvider = appState.aiProviders.find(p => p.default);
+        if (defaultProvider && onboardingForm.providerSelect) {
+            // Set provider
+            onboardingForm.providerSelect.value = defaultProvider.name;
+            
+            // Trigger change event to update model dropdown
+            onboardingForm.providerSelect.dispatchEvent(new Event('change'));
+            
+            // Set default model after dropdown is populated
+            setTimeout(() => {
+                if (onboardingForm.modelSelect && !onboardingForm.modelSelect.disabled) {
+                    const defaultModel = defaultProvider.models.find(m => m === 'llama-3.3-70b') || defaultProvider.models[0];
+                    if (defaultModel) {
+                        onboardingForm.modelSelect.value = defaultModel;
+                    }
+                }
+            }, 150);
+        }
+    } catch (error) {
+        console.error("Error setting default AI provider:", error);
     }
 }
 
@@ -285,6 +344,7 @@ function updateModelDropdown() {
 // --- Event Listeners ---
 proceedButton.addEventListener('click', handleOnboarding);
 startButton.addEventListener('click', startInterview);
+backButton.addEventListener('click', () => switchView('onboarding'));
 onboardingForm.providerSelect.addEventListener('change', updateModelDropdown);
 
 window.addEventListener('DOMContentLoaded', async () => {

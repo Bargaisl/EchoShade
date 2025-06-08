@@ -22,10 +22,10 @@
             
             <fieldset>
                 <legend>Your Profile</legend>
-                <input type="text" id="user-name" placeholder="Your Name">
-                <input type="text" id="user-company" placeholder="Company You're Interviewing With">
-                <input type="text" id="user-role" placeholder="Target Role">
-                <textarea id="user-resume" placeholder="Paste your resume text here..."></textarea>
+                <input type="text" id="user-name" placeholder="Your Name" required>
+                <input type="text" id="user-company" placeholder="Company You're Interviewing With" required>
+                <input type="text" id="user-role" placeholder="Target Role" required>
+                <textarea id="user-resume" placeholder="Paste your resume text here..." required></textarea>
             </fieldset>
 
             <fieldset>
@@ -43,10 +43,10 @@
             <fieldset>
                 <legend>AI Configuration</legend>
                 <div class="ai-config-group">
-                    <select id="ai-provider-select">
+                    <select id="ai-provider-select" required>
                         <option value="">Select AI Provider</option>
                     </select>
-                    <select id="ai-model-select" disabled>
+                    <select id="ai-model-select" disabled required>
                         <option value="">Select Model</option>
                     </select>
                 </div>
@@ -72,7 +72,10 @@
                 <div class="check-item" id="check-deepgram"><span class="indicator">⚪</span> Deepgram API</div>
                 <div class="check-item" id="check-ai-provider"><span class="indicator">⚪</span> AI Provider</div>
             </div>
-            <button id="start-interview-button" disabled>Start Interview</button>
+            <div class="preflight-buttons">
+                <button id="back-to-onboarding-btn">Back</button>
+                <button id="start-interview-button" disabled>Start Interview</button>
+            </div>
         </div>
     </div>
 
