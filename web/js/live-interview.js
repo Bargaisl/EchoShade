@@ -13,8 +13,11 @@ class LiveInterviewUI {
         // Configuration
         this.config = {
             enableStreaming: true,
-            streamingSpeed: 25, // milliseconds between words (lower = faster)
-            aiStreamingSpeed: 15, // AI responses stream faster
+            streamingSpeed: 15, // milliseconds between words (lower = faster)
+            aiStreamingSpeed: 5, // 2x faster than before (was 40, now 20)
+            bgTransparency: 0.85, // Background transparency (0-1)
+            contentTransparency: 0.15, // Content transparency (0-1)
+            codeTransparency: 0.25 // Code block transparency (0-1)
         };
     }
 
@@ -303,6 +306,30 @@ class LiveInterviewUI {
         this.config.aiStreamingSpeed = Math.max(5, Math.min(50, speed)); // 5-50ms range
     }
 
+    // Transparency configuration methods
+    setBackgroundTransparency(transparency) {
+        this.config.bgTransparency = Math.max(0, Math.min(1, transparency));
+        this.updateCSSTransparency();
+    }
+
+    setContentTransparency(transparency) {
+        this.config.contentTransparency = Math.max(0, Math.min(1, transparency));
+        this.updateCSSTransparency();
+    }
+
+    setCodeTransparency(transparency) {
+        this.config.codeTransparency = Math.max(0, Math.min(1, transparency));
+        this.updateCSSTransparency();
+    }
+
+    // Update CSS transparency variables
+    updateCSSTransparency() {
+        const root = document.documentElement;
+        root.style.setProperty('--bg-transparency', this.config.bgTransparency);
+        root.style.setProperty('--content-transparency', this.config.contentTransparency);
+        root.style.setProperty('--code-transparency', this.config.codeTransparency);
+    }
+
     // Scroll to bottom
     scrollToBottom() {
         if (this.conversationStream) {
@@ -336,6 +363,7 @@ class LiveInterviewUI {
     initialize() {
         this.clearConversation();
         this.showActivity('Listening...');
+        this.updateCSSTransparency(); // Apply initial transparency settings
         console.log('🎬 Live interview UI initialized');
     }
 }
@@ -357,6 +385,142 @@ window.setInterviewSpeed = (speed) => {
 window.setAISpeed = (speed) => {
     window.liveInterviewUI.setAIStreamingSpeed(speed);
     console.log(`🤖 AI streaming speed set to ${speed}ms`);
+};
+
+// Transparency configuration functions
+window.setBackgroundTransparency = (transparency) => {
+    window.liveInterviewUI.setBackgroundTransparency(transparency);
+    console.log(`🌙 Background transparency set to ${transparency}`);
+};
+
+window.setContentTransparency = (transparency) => {
+    window.liveInterviewUI.setContentTransparency(transparency);
+    console.log(`🖼️ Content transparency set to ${transparency}`);
+};
+
+window.setCodeTransparency = (transparency) => {
+    window.liveInterviewUI.setCodeTransparency(transparency);
+    console.log(`💻 Code transparency set to ${transparency}`);
+};
+
+// Transparency presets
+window.setMinimalMode = () => {
+    window.setBackgroundTransparency(0.95);
+    window.setContentTransparency(0.05);
+    window.setCodeTransparency(0.15);
+    console.log('👤 Minimal mode activated');
+};
+
+window.setGhostMode = () => {
+    window.setBackgroundTransparency(0.98);
+    window.setContentTransparency(0.02);
+    window.setCodeTransparency(0.08);
+    console.log('👻 Ghost mode activated - maximum transparency');
+};
+
+window.setStealthMode = () => {
+    window.setBackgroundTransparency(0.90);
+    window.setContentTransparency(0.10);
+    window.setCodeTransparency(0.20);
+    console.log('🥷 Stealth mode activated');
+};
+
+window.setDefaultTransparency = () => {
+    window.setBackgroundTransparency(0.85);
+    window.setContentTransparency(0.15);
+    window.setCodeTransparency(0.25);
+    console.log('🎨 Default transparency restored');
+};
+
+// Windows-level transparency controls
+window.setWindowTransparency = async (transparency) => {
+    try {
+        const response = await fetch('/api/transparency', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transparency: transparency })
+        });
+        const result = await response.json();
+        if (result.success) {
+            console.log(`🪟 ${result.message}`);
+        } else {
+            console.error('❌ Failed to set window transparency');
+        }
+    } catch (error) {
+        console.error('❌ Error setting window transparency:', error);
+    }
+};
+
+window.setWindowTransparencyPercent = async (percent) => {
+    try {
+        const response = await fetch('/api/transparency/percent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ percent: percent })
+        });
+        const result = await response.json();
+        if (result.success) {
+            console.log(`🪟 ${result.message}`);
+        } else {
+            console.error('❌ Failed to set window transparency');
+        }
+    } catch (error) {
+        console.error('❌ Error setting window transparency:', error);
+    }
+};
+
+// Window transparency presets
+window.setInterviewMode = async () => {
+    try {
+        const response = await fetch('/api/transparency/presets/transparent', {
+            method: 'POST'
+        });
+        const result = await response.json();
+        if (result.success) {
+            console.log('🎯 Interview mode activated - window is now 40% opaque');
+        }
+    } catch (error) {
+        console.error('❌ Error setting interview mode:', error);
+    }
+};
+
+window.setSemiTransparentMode = async () => {
+    try {
+        const response = await fetch('/api/transparency/presets/semi-transparent', {
+            method: 'POST'
+        });
+        const result = await response.json();
+        if (result.success) {
+            console.log('🌫️ Semi-transparent mode activated - window is now 70% opaque');
+        }
+    } catch (error) {
+        console.error('❌ Error setting semi-transparent mode:', error);
+    }
+};
+
+window.setOpaqueMode = async () => {
+    try {
+        const response = await fetch('/api/transparency/presets/opaque', {
+            method: 'POST'
+        });
+        const result = await response.json();
+        if (result.success) {
+            console.log('🎨 Opaque mode activated - window is now 100% opaque');
+        }
+    } catch (error) {
+        console.error('❌ Error setting opaque mode:', error);
+    }
+};
+
+window.getTransparencyInfo = async () => {
+    try {
+        const response = await fetch('/api/transparency');
+        const info = await response.json();
+        console.log('🪟 Window Transparency Info:', info);
+        return info;
+    } catch (error) {
+        console.error('❌ Error getting transparency info:', error);
+    }
 };
 
 // Quick presets

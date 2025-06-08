@@ -50,11 +50,29 @@ if __name__ == '__main__':
         resizable=True
     )
 
-    # 5. Apply capture protection (or skip in DEV_MODE)
-    if not DEV_MODE:
-        window.events.shown += lambda: window_manager.apply_capture_protection(window)
-    else:
-        print("INFO: DEV_MODE is True. Skipping screen capture protection.")
+    # 5. Apply capture protection and transparency (or skip in DEV_MODE)
+    def on_window_shown():
+        if not DEV_MODE:
+            window_manager.apply_capture_protection(window)
+        else:
+            print("INFO: DEV_MODE is True. Skipping screen capture protection.")
+        
+        # Set up window transparency
+        import time
+        time.sleep(0.5)  # Give window time to fully initialize
+        
+        # Find and configure window transparency
+        if window_manager.find_aura_window():
+            # Set default transparency to 40% transparent (60% opacity) for interviews
+            success = window_manager.set_app_transparency(0.6)
+            if success:
+                print("🌙 Window transparency initialized (60% opacity)")
+            else:
+                print("⚠️ Failed to set window transparency")
+        else:
+            print("⚠️ Could not find Aura window for transparency control")
+    
+    window.events.shown += on_window_shown
 
     # 6. Start the pywebview event loop with debug based on DEV_MODE
     webview.start(debug=DEV_MODE)

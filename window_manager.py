@@ -8,6 +8,9 @@ import ctypes
 import ctypes.wintypes as wintypes
 import webview
 import time
+import tkinter as tk
+import platform
+from typing import Optional
 
 # --- Win32 API Constants ---
 # These flags are used with the SetWindowDisplayAffinity function.
@@ -33,6 +36,174 @@ _user32.SetWindowDisplayAffinity.argtypes = (wintypes.HWND, wintypes.DWORD)
 _user32.FindWindowW.restype               = wintypes.HWND
 _user32.FindWindowW.argtypes              = (wintypes.LPCWSTR, wintypes.LPCWSTR)
 
+class WindowManager:
+    def __init__(self):
+        self.hwnd: Optional[int] = None
+        self.is_windows = platform.system() == "Windows"
+        self.current_transparency = 1.0  # 1.0 = opaque, 0.0 = transparent
+        
+        # Windows API constants
+        if self.is_windows:
+            self.GWL_EXSTYLE = -20
+            self.WS_EX_LAYERED = 0x80000
+            self.LWA_ALPHA = 0x2
+            
+            # Windows API functions
+            self.user32 = ctypes.windll.user32
+            self.GetWindowLongW = self.user32.GetWindowLongW
+            self.SetWindowLongW = self.user32.SetWindowLongW
+            self.SetLayeredWindowAttributes = self.user32.SetLayeredWindowAttributes
+            
+    def set_window_handle(self, window_handle: int):
+        """Set the window handle for transparency operations"""
+        self.hwnd = window_handle
+        if self.is_windows and self.hwnd:
+            self._enable_transparency()
+        
+    def _enable_transparency(self):
+        """Enable transparency capability for the window"""
+        if not self.is_windows or not self.hwnd:
+            return False
+            
+        try:
+            # Get current window style
+            ex_style = self.GetWindowLongW(self.hwnd, self.GWL_EXSTYLE)
+            
+            # Add layered window style if not present
+            if not (ex_style & self.WS_EX_LAYERED):
+                new_style = ex_style | self.WS_EX_LAYERED
+                self.SetWindowLongW(self.hwnd, self.GWL_EXSTYLE, new_style)
+                
+            return True
+        except Exception as e:
+            print(f"Error enabling transparency: {e}")
+            return False
+    
+    def set_transparency(self, transparency: float) -> bool:
+        """
+        Set window transparency level
+        Args:
+            transparency: Float between 0.0 (fully transparent) and 1.0 (fully opaque)
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not self.is_windows or not self.hwnd:
+            print("Transparency not supported on this platform or no window handle")
+            return False
+            
+        # Clamp transparency value
+        transparency = max(0.0, min(1.0, transparency))
+        self.current_transparency = transparency
+        
+        try:
+            # Convert to Windows alpha value (0-255)
+            alpha = int(transparency * 255)
+            
+            # Apply transparency
+            result = self.SetLayeredWindowAttributes(
+                self.hwnd,
+                0,  # colorkey (not used)
+                alpha,  # alpha value
+                self.LWA_ALPHA  # use alpha
+            )
+            
+            if result:
+                print(f"✅ Window transparency set to {transparency*100:.0f}%")
+                return True
+            else:
+                print("❌ Failed to set window transparency")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Error setting transparency: {e}")
+            return False
+    
+    def get_transparency(self) -> float:
+        """Get current transparency level"""
+        return self.current_transparency
+    
+    def set_transparency_percent(self, percent: int) -> bool:
+        """
+        Set transparency as percentage
+        Args:
+            percent: Integer between 0 (fully transparent) and 100 (fully opaque)
+        """
+        transparency = percent / 100.0
+        return self.set_transparency(transparency)
+    
+    def make_transparent(self) -> bool:
+        """Make window 60% transparent (40% opacity) - good for interviews"""
+        return self.set_transparency(0.4)
+    
+    def make_semi_transparent(self) -> bool:
+        """Make window semi-transparent (70% opacity)"""
+        return self.set_transparency(0.7)
+    
+    def make_opaque(self) -> bool:
+        """Make window fully opaque"""
+        return self.set_transparency(1.0)
+    
+    def find_window_by_title(self, title: str) -> Optional[int]:
+        """Find window handle by title"""
+        if not self.is_windows:
+            return None
+            
+        try:
+            FindWindowW = self.user32.FindWindowW
+            FindWindowW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR]
+            FindWindowW.restype = wintypes.HWND
+            
+            hwnd = FindWindowW(None, title)
+            if hwnd:
+                self.set_window_handle(hwnd)
+                return hwnd
+            return None
+        except Exception as e:
+            print(f"Error finding window: {e}")
+            return None
+    
+    def get_window_info(self) -> dict:
+        """Get current window transparency info"""
+        return {
+            "transparency": self.current_transparency,
+            "transparency_percent": int(self.current_transparency * 100),
+            "is_transparent": self.current_transparency < 1.0,
+            "platform_supported": self.is_windows,
+            "window_handle": self.hwnd
+        }
+
+# Global instance
+window_manager = WindowManager()
+
+# Convenience functions for easy use
+def set_app_transparency(transparency: float) -> bool:
+    """Set app window transparency (0.0 to 1.0)"""
+    return window_manager.set_transparency(transparency)
+
+def set_app_transparency_percent(percent: int) -> bool:
+    """Set app window transparency as percentage (0 to 100)"""
+    return window_manager.set_transparency_percent(percent)
+
+def make_app_transparent() -> bool:
+    """Make app window 60% transparent (good for interviews)"""
+    return window_manager.make_transparent()
+
+def make_app_semi_transparent() -> bool:
+    """Make app window semi-transparent"""
+    return window_manager.make_semi_transparent()
+
+def make_app_opaque() -> bool:
+    """Make app window fully opaque"""
+    return window_manager.make_opaque()
+
+def find_aura_window() -> bool:
+    """Find and set Aura window for transparency control"""
+    hwnd = window_manager.find_window_by_title("Aura")
+    return hwnd is not None
+
+def get_transparency_info() -> dict:
+    """Get current transparency information"""
+    return window_manager.get_window_info()
 
 def apply_capture_protection(window):
     """
