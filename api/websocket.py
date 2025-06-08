@@ -67,7 +67,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     silence_timer.cancel()
                 
                 async def delayed_processing():
-                    await asyncio.sleep(1.2)
+                    await asyncio.sleep(1.3)
                     await process_aggregated_transcript() # Fire the processor after silence
                 
                 silence_timer = asyncio.create_task(delayed_processing())

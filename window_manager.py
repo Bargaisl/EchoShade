@@ -46,12 +46,105 @@ _user32.ShowWindow.restype = wintypes.BOOL
 _user32.IsWindowVisible.argtypes = (wintypes.HWND,)
 _user32.IsWindowVisible.restype = wintypes.BOOL
 
+# Screen sharing indicator detection constants
+SCREEN_SHARE_INDICATORS = [
+    # Generic Windows indicators
+    "Screen sharing indicator",
+    "You're sharing your screen",
+    "Screen Share Notification", 
+    "Screen Recording Indicator",
+    "Sharing indicator",
+    "Recording indicator",
+    "You are sharing your screen",
+    "Screen share active",
+    "Recording in progress",
+    
+    # Browser-specific indicators
+    "Chrome is sharing your screen",
+    "Microsoft Edge is sharing your screen", 
+    "Firefox is sharing your screen",
+    "Safari is sharing your screen",
+    "Opera is sharing your screen",
+    "Brave is sharing your screen",
+    "is sharing your screen",
+    "wants to share your screen",
+    "Screen capture in progress",
+    "Display capture active",
+    
+    # Video conferencing platforms
+    "Zoom is sharing your screen",
+    "Microsoft Teams is sharing your screen",
+    "Google Meet is sharing your screen",
+    "Skype is sharing your screen",
+    "Discord is sharing your screen",
+    "Slack is sharing your screen",
+    "WebEx is sharing your screen",
+    "GoToMeeting is sharing your screen",
+    "BlueJeans is sharing your screen",
+    "Jitsi is sharing your screen",
+    "BigBlueButton is sharing your screen",
+    
+    # Screen recording software
+    "OBS is recording your screen",
+    "OBS Studio is recording",
+    "Camtasia is recording",
+    "Bandicam is recording",
+    "Fraps is recording",
+    "XSplit is recording",
+    "Streamlabs is recording",
+    "Action! is recording",
+    "Nvidia ShadowPlay",
+    "AMD ReLive",
+    "Windows Game Bar recording",
+    "Xbox Game Bar recording",
+    
+    # Remote desktop and sharing tools
+    "TeamViewer is sharing your screen",
+    "AnyDesk is sharing your screen", 
+    "Chrome Remote Desktop",
+    "Windows Remote Desktop",
+    "VNC is sharing your screen",
+    "LogMeIn is sharing your screen",
+    "Splashtop is sharing your screen",
+    "Parsec is sharing your screen",
+    
+    # Generic patterns
+    "sharing your desktop",
+    "recording your desktop", 
+    "capturing your screen",
+    "desktop sharing active",
+    "screen capture active",
+    "display recording",
+    "monitor sharing",
+    "window sharing",
+    "application sharing",
+    "presentation mode active",
+    
+    # Notification variations
+    "Screen share notification",
+    "Recording notification", 
+    "Capture notification",
+    "Privacy indicator",
+    "Camera and microphone access",
+    "Microphone access",
+    "Screen access granted",
+    
+    # Development and testing tools
+    "Selenium is controlling",
+    "Puppeteer is controlling",
+    "Playwright is controlling",
+    "Automated testing in progress",
+    "Browser automation active"
+]
+
 class WindowManager:
     def __init__(self):
         self.hwnd: Optional[int] = None
         self.is_windows = platform.system() == "Windows"
         self.current_transparency = 1.0
         self.is_ghost_mode = False
+        self.screen_share_monitor_active = False
+        self.hidden_screen_share_windows = set()
 
         if self.is_windows:
             self._setup_win32_api_definitions()
@@ -95,6 +188,21 @@ class WindowManager:
         self.SetWindowPos = self.user32.SetWindowPos
         self.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.UINT]
         self.SetWindowPos.restype = wintypes.BOOL
+
+        # EnumWindows for finding all windows
+        self.EnumWindows = self.user32.EnumWindows
+        self.EnumWindows.argtypes = [ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM), wintypes.LPARAM]
+        self.EnumWindows.restype = wintypes.BOOL
+
+        # GetWindowText for getting window titles
+        self.GetWindowTextW = self.user32.GetWindowTextW
+        self.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+        self.GetWindowTextW.restype = ctypes.c_int
+
+        # GetClassName for getting window class names
+        self.GetClassNameW = self.user32.GetClassNameW
+        self.GetClassNameW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+        self.GetClassNameW.restype = ctypes.c_int
             
     def set_window_handle(self, window_handle: int):
         """Set the window handle for transparency operations"""
@@ -203,6 +311,211 @@ class WindowManager:
         except Exception as e:
             print(f"Error finding window: {e}")
             return None
+
+    def find_screen_share_indicators(self) -> list:
+        """Find all screen sharing indicator windows"""
+        if not self.is_windows:
+            return []
+        
+        found_windows = []
+        
+        def enum_windows_callback(hwnd, lparam):
+            try:
+                # Get window title
+                title_buffer = ctypes.create_unicode_buffer(512)
+                title_length = self.GetWindowTextW(hwnd, title_buffer, 512)
+                title = title_buffer.value if title_length > 0 else ""
+                
+                # Get window class name
+                class_buffer = ctypes.create_unicode_buffer(256)
+                class_length = self.GetClassNameW(hwnd, class_buffer, 256)
+                class_name = class_buffer.value if class_length > 0 else ""
+                
+                # Check if this looks like a screen sharing indicator
+                is_indicator = False
+                
+                # Check title for screen sharing keywords
+                title_lower = title.lower()
+                for indicator_text in SCREEN_SHARE_INDICATORS:
+                    if indicator_text.lower() in title_lower:
+                        is_indicator = True
+                        break
+                
+                # Check class name for known screen sharing/recording classes
+                if not is_indicator:
+                    screen_share_classes = [
+                        # Browser notifications
+                        "Chrome_WidgetWin_1",  # Chrome screen share notification
+                        "MozillaDialogClass",  # Firefox screen share notification
+                        "EdgeWebView2",        # Edge screen share notification
+                        "OperaWindowClass",    # Opera browser
+                        "BraveWindowClass",    # Brave browser
+                        
+                        # Windows system notifications
+                        "NotificationPresenterHost",  # Windows notification
+                        "Windows.UI.Core.CoreWindow",  # Windows 10/11 notifications
+                        "ApplicationFrameHost",        # Windows 10/11 app frame
+                        "Shell_TrayWnd",              # System tray notifications
+                        
+                        # Video conferencing
+                        "ZPContentViewWndClass",      # Zoom
+                        "ZPFloatToolbarClass",        # Zoom toolbar
+                        "TeamsWebView",               # Microsoft Teams
+                        "SkypeWindowClass",           # Skype
+                        "DiscordWindowClass",         # Discord
+                        "SlackWindowClass",           # Slack
+                        
+                        # Screen recording software
+                        "Qt5QWindowIcon",             # OBS Studio
+                        "OBSWindowClass",             # OBS
+                        "CamtasiaStudioWindowClass",  # Camtasia
+                        "BandicamWindowClass",        # Bandicam
+                        "XSplitWindowClass",          # XSplit
+                        "StreamlabsWindowClass",      # Streamlabs
+                        "FrapsWindowClass",           # Fraps
+                        "ActionWindowClass",          # Mirillis Action!
+                        
+                        # Remote desktop tools
+                        "TeamViewer_DesktopWindowClass",  # TeamViewer
+                        "AnyDeskWindowClass",             # AnyDesk
+                        "VNCWindowClass",                 # VNC viewers
+                        "LogMeInWindowClass",             # LogMeIn
+                        "SplashtopWindowClass",           # Splashtop
+                        "ParsecWindowClass",              # Parsec
+                        
+                        # System recording indicators
+                        "GameBarDisplayCaptureIndicator", # Xbox Game Bar
+                        "NvidiaGeForceExperience",        # Nvidia ShadowPlay
+                        "AMDReliveWindowClass",           # AMD ReLive
+                        
+                        # Generic Windows classes
+                        "NotifyIconOverflowWindow",       # System tray overflow
+                        "ToolbarWindow32",                # Toolbar notifications
+                        "Static",                         # Static text windows
+                        "Button"                          # Button controls
+                    ]
+                    
+                    for share_class in screen_share_classes:
+                        if share_class.lower() in class_name.lower():
+                            # Additional verification for these classes
+                            verification_keywords = [
+                                "sharing", "screen", "record", "capture", "desktop", 
+                                "monitor", "display", "streaming", "broadcast", "meeting",
+                                "presentation", "remote", "control", "access"
+                            ]
+                            if any(keyword in title_lower for keyword in verification_keywords):
+                                is_indicator = True
+                                break
+                
+                if is_indicator and _user32.IsWindowVisible(hwnd):
+                    found_windows.append({
+                        'hwnd': hwnd,
+                        'title': title,
+                        'class': class_name
+                    })
+                    print(f"🔍 Found screen share indicator: '{title}' (Class: {class_name})")
+                
+            except Exception as e:
+                # Continue enumeration even if one window fails
+                pass
+            
+            return True  # Continue enumeration
+        
+        try:
+            callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+            callback = callback_type(enum_windows_callback)
+            self.EnumWindows(callback, 0)
+        except Exception as e:
+            print(f"❌ Error enumerating windows: {e}")
+        
+        return found_windows
+
+    def hide_screen_share_indicator(self, hwnd: int) -> bool:
+        """Hide a specific screen sharing indicator window"""
+        if not self.is_windows:
+            return False
+        
+        try:
+            # Method 1: Try to hide the window completely
+            result = _user32.ShowWindow(hwnd, SW_HIDE)
+            if result:
+                print(f"✅ Hidden screen share indicator (HWND: {hex(hwnd)})")
+                self.hidden_screen_share_windows.add(hwnd)
+                return True
+            
+            # Method 2: Try to move it off-screen if hiding failed
+            try:
+                self.SetWindowPos(
+                    hwnd, 0, 
+                    -10000, -10000,  # Move far off-screen
+                    0, 0,  # Don't change size
+                    self.SWP_NOSIZE
+                )
+                print(f"✅ Moved screen share indicator off-screen (HWND: {hex(hwnd)})")
+                return True
+            except:
+                pass
+            
+            # Method 3: Try to minimize the window
+            try:
+                _user32.ShowWindow(hwnd, 6)  # SW_MINIMIZE
+                print(f"✅ Minimized screen share indicator (HWND: {hex(hwnd)})")
+                return True
+            except:
+                pass
+                
+            print(f"❌ Failed to hide screen share indicator (HWND: {hex(hwnd)})")
+            return False
+            
+        except Exception as e:
+            print(f"❌ Error hiding screen share indicator: {e}")
+            return False
+
+    def hide_all_screen_share_indicators(self) -> int:
+        """Find and hide all screen sharing indicators"""
+        if not self.is_windows:
+            return 0
+        
+        indicators = self.find_screen_share_indicators()
+        hidden_count = 0
+        
+        for indicator in indicators:
+            hwnd = indicator['hwnd']
+            if hwnd not in self.hidden_screen_share_windows:
+                if self.hide_screen_share_indicator(hwnd):
+                    hidden_count += 1
+        
+        if hidden_count > 0:
+            print(f"🕵️ Successfully hidden {hidden_count} screen sharing indicator(s)")
+        
+        return hidden_count
+
+    def start_screen_share_monitor(self):
+        """Start monitoring for screen sharing indicators and auto-hide them"""
+        if not self.is_windows or self.screen_share_monitor_active:
+            return
+        
+        print("🔍 Starting screen sharing indicator monitor...")
+        self.screen_share_monitor_active = True
+        
+        def monitor_thread():
+            while self.screen_share_monitor_active:
+                try:
+                    self.hide_all_screen_share_indicators()
+                    time.sleep(1.0)  # Check every second
+                except Exception as e:
+                    print(f"❌ Error in screen share monitor: {e}")
+                    time.sleep(2.0)  # Wait longer on error
+        
+        monitor = Thread(target=monitor_thread, daemon=True)
+        monitor.start()
+        print("✅ Screen sharing indicator monitor started")
+
+    def stop_screen_share_monitor(self):
+        """Stop monitoring for screen sharing indicators"""
+        if self.screen_share_monitor_active:
+            self.screen_share_monitor_active = False
+            print("🛑 Screen sharing indicator monitor stopped")
     
     def set_always_on_top(self, on_top: bool) -> bool:
         """
@@ -288,7 +601,9 @@ class WindowManager:
             "transparency_percent": int(self.current_transparency * 100),
             "is_transparent": self.current_transparency < 1.0,
             "platform_supported": self.is_windows,
-            "window_handle": self.hwnd
+            "window_handle": self.hwnd,
+            "screen_share_monitor_active": self.screen_share_monitor_active,
+            "hidden_screen_share_windows": len(self.hidden_screen_share_windows)
         }
 
     def set_ghost_mode(self, enabled: bool):
@@ -361,9 +676,15 @@ class WindowManager:
         def on_toggle_ghost():
             self.toggle_ghost_mode()
 
+        def on_hide_screen_share():
+            """Manually trigger screen share indicator hiding"""
+            hidden_count = self.hide_all_screen_share_indicators()
+            print(f"🕵️ Manual screen share hide triggered - hidden {hidden_count} indicators")
+
         hotkey_map = {
             '<alt>+x': on_toggle_ghost,
             '<alt>+z': on_hide_show,
+            '<alt>+s': on_hide_screen_share,  # New hotkey for manual screen share hiding
         }
         
         with keyboard.GlobalHotKeys(hotkey_map) as h:
@@ -376,6 +697,10 @@ class WindowManager:
             return
 
         print("🚀 Initializing global hotkey listener...")
+        print("   Alt+X: Toggle ghost mode (click-through)")
+        print("   Alt+Z: Toggle window visibility")
+        print("   Alt+S: Hide screen sharing indicators")
+        
         # Ensure we have the handle before starting
         if not self.hwnd:
             if not self.find_window_by_title("Aura"):
@@ -421,6 +746,36 @@ def set_app_always_on_top(on_top: bool) -> bool:
 def get_transparency_info() -> dict:
     """Get current transparency information"""
     return window_manager.get_window_info()
+
+def hide_screen_share_indicators() -> int:
+    """Hide all screen sharing indicators and return count hidden"""
+    return window_manager.hide_all_screen_share_indicators()
+
+def start_screen_share_monitor():
+    """Start automatically monitoring and hiding screen share indicators"""
+    window_manager.start_screen_share_monitor()
+
+def stop_screen_share_monitor():
+    """Stop monitoring screen share indicators"""
+    window_manager.stop_screen_share_monitor()
+
+def test_screen_share_detection():
+    """Test function to show all currently detected screen sharing indicators"""
+    print("🔍 Testing screen share indicator detection...")
+    indicators = window_manager.find_screen_share_indicators()
+    
+    if not indicators:
+        print("✅ No screen sharing indicators currently detected")
+        return []
+    
+    print(f"🚨 Found {len(indicators)} screen sharing indicator(s):")
+    for i, indicator in enumerate(indicators, 1):
+        print(f"   {i}. Title: '{indicator['title']}'")
+        print(f"      Class: '{indicator['class']}'") 
+        print(f"      HWND: {hex(indicator['hwnd'])}")
+        print()
+    
+    return indicators
 
 def apply_capture_protection(window):
     """
@@ -478,6 +833,9 @@ def apply_capture_protection(window):
         # Set window handle and hide from taskbar
         window_manager.set_window_handle(hwnd)
         window_manager.hide_from_taskbar()
+        
+        # Start screen share indicator monitoring
+        window_manager.start_screen_share_monitor()
         
         # Verify the protection was applied
         verify_protection(hwnd)
