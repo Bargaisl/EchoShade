@@ -180,6 +180,7 @@
     flex: 1;
     overflow-y: auto;
     padding: clamp(0.5rem, 3vw, 2rem);
+    padding-bottom: 2rem; /* Add space at the bottom */
     scroll-behavior: smooth;
     min-height: 0;
     display: flex;
@@ -343,6 +344,8 @@
     padding: clamp(0.5rem, 2vw, 1rem);
     overflow-x: auto;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
     font-size: clamp(0.7rem, 2vw, 0.9rem);
     line-height: 1.5;
     white-space: pre-wrap;

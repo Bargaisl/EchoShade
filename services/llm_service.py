@@ -41,8 +41,8 @@ class LLMManager:
             chat_completion = await self.client.chat.completions.create(
                 messages=[{"role": "user", "content": prompt}],
                 model=self.model_name,
-                temperature=0.3,
-                top_p=0.9,
+                temperature=0.5,
+                top_p=0.8,
             )
             
             answer = chat_completion.choices[0].message.content

@@ -142,14 +142,12 @@ class LiveInterviewUI {
     addInterviewerQuestion(question, isInterim = false) {
         if (isInterim) {
             // For interim results, update existing or create new
-            if (this.currentInterviewerElement) {
-                this.updateInterviewerMessage(question);
-            } else {
-                this.currentInterviewerElement = this.createMessageElement(question, 'interviewer');
+            if (!this.currentInterviewerElement) {
+                this.currentInterviewerElement = this.createMessageElement('', 'interviewer');
                 this.conversationStream.appendChild(this.currentInterviewerElement);
-                this.updateInterviewerMessage(question);
                 this.updateEmptyState();
             }
+            this.updateInterviewerMessage(this.currentInterviewerElement.querySelector('.streaming-text').textContent + ' ' + question);
         } else {
             // For final results
             if (this.currentInterviewerElement) {
@@ -250,7 +248,9 @@ class LiveInterviewUI {
             
             // Use streaming module for final content
             this.streaming.streamContent(contentDiv, content, this.streaming.config.streamingSpeed).then(() => {
-                this.currentInterviewerElement.classList.add('complete');
+                if (this.currentInterviewerElement) {
+                    this.currentInterviewerElement.classList.add('complete');
+                }
             });
             
             // Clear the reference since this is final
@@ -344,6 +344,11 @@ class LiveInterviewUI {
         this.showActivity('Listening...');
         this.controls.initialize(); // Initialize controls module
         this.updateEmptyState();
+        
+        // Correctly set initial mute button state
+        if (typeof window.isMicrophoneMuted === 'function') {
+            this.updateMuteButton(window.isMicrophoneMuted());
+        }
         
         // Set default mute state (muted by default for privacy)
         if (typeof window.isMicrophoneMuted === 'function') {

@@ -211,7 +211,7 @@ function checkAllSystemsGo() {
 async function startInterview() {
     switchView('live');
     liveInterviewUI.init(); // CRITICAL FIX: Initialize DOM elements first
-    // liveInterviewUI.initialize(); // Moved to DOMContentLoaded
+    liveInterviewUI.initialize();
     hotkeyManager.setEnabled(true);
     
     const onAudioData = (audioData, speakerHint) => {

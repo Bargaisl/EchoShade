@@ -23,7 +23,7 @@ body {
     position: absolute;
     width: 100%;
     min-height: 100vh;
-    padding: 1rem;
+    padding: 0rem;
     box-sizing: border-box;
     display: flex;
     justify-content: center;
@@ -39,6 +39,10 @@ body {
     opacity: 1;
     transform: scale(1);
     pointer-events: auto;
+}
+
+#live-view {
+    position: fixed;
 }
 
 .container {

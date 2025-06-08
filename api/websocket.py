@@ -19,43 +19,54 @@ async def websocket_endpoint(websocket: WebSocket):
     
     dg_manager = None
     llm_manager = None
+    
+    # --- Transcript Buffering ---
+    transcript_buffer = ""
+    buffer_timer = None
+
+    async def process_buffered_transcript():
+        nonlocal transcript_buffer
+        if transcript_buffer:
+            print(f"✅ Processing buffered transcript: {transcript_buffer}")
+            if llm_manager:
+                answer = await llm_manager.get_ai_answer(transcript_buffer, onboarding_context)
+                await send_json(websocket, "ai_answer", {"answer": answer})
+                print(f"🤖 AI ANSWER: {answer}")
+            else:
+                print("⚠️ LLM Manager not initialized, cannot get AI answer.")
+            transcript_buffer = "" # Clear buffer after processing
 
     async def on_transcript(data):
         """Callback function to handle transcripts from Deepgram."""
+        nonlocal transcript_buffer, buffer_timer
         try:
-            # Always send transcript updates to client (both interim and final)
             await send_json(websocket, "transcript_update", data)
 
-            # Only generate AI responses for final results to avoid duplicates
-            is_final = data.get('is_final', True)
-            
-            if is_final:
-                # Handle different speakers with conversation tracking
-                # Speaker 0 = System audio (INTERVIEWER)  
-                # Speaker 1 = Microphone (CANDIDATE)
-                if data.get('speaker') == 0 and data.get('transcript'):
-                    interviewer_question = data['transcript']
-                    print(f"🎤 INTERVIEWER (FINAL): {interviewer_question}")
+            is_final = data.get('is_final', False)
+            transcript = data.get('transcript', '')
+            speaker = data.get('speaker')
+
+            # --- Interviewer (Speaker 0) Logic ---
+            if transcript and speaker == 0:
+                transcript_buffer += transcript + " "
+                
+                if buffer_timer and not buffer_timer.done():
+                    buffer_timer.cancel()
+                
+                if is_final:
+                    # Use a new, clean task for the timer
+                    async def delayed_processing():
+                        await asyncio.sleep(1.2)
+                        await process_buffered_transcript()
                     
-                    if llm_manager:
-                        answer = await llm_manager.get_ai_answer(interviewer_question, onboarding_context)
-                        await send_json(websocket, "ai_answer", {"answer": answer})
-                        print(f"🤖 AI ANSWER: {answer}")
-                    else:
-                        print("⚠️ LLM Manager not initialized, cannot get AI answer.")
-                    
-                elif data.get('speaker') == 1 and data.get('transcript'):
-                    candidate_response = data['transcript']
-                    print(f"👤 CANDIDATE (FINAL): {candidate_response}")
-                    
-                    if llm_manager:
-                        llm_manager.process_candidate_response(candidate_response)
-                    else:
-                        print("⚠️ LLM Manager not initialized, cannot process candidate response.")
-            else:
-                # For interim results, just log without generating AI responses
-                speaker_type = "INTERVIEWER" if data.get('speaker') == 0 else "CANDIDATE"
-                print(f"⏳ {speaker_type} (interim): {data.get('transcript', '')}")
+                    buffer_timer = asyncio.create_task(delayed_processing())
+
+            # --- Candidate (Speaker 1) Logic ---
+            elif is_final and speaker == 1 and transcript:
+                candidate_response = transcript
+                print(f"👤 CANDIDATE (FINAL): {candidate_response}")
+                if llm_manager:
+                    llm_manager.process_candidate_response(candidate_response)
                 
         except WebSocketDisconnect:
             print("🔌 Client disconnected while sending transcript/answer")
