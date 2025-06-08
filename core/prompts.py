@@ -41,19 +41,20 @@ def build_conversation_context(conversation_history: List[Dict]) -> str:
     if not settings.INCLUDE_CONVERSATION_HISTORY or not conversation_history:
         return ""
     
-    context_parts = ["Recent conversation context:"]
+    context_parts = ["Previous conversation exchanges (for context only):"]
     
     # Take the last few exchanges
     recent_history = conversation_history[-settings.MAX_CONVERSATION_HISTORY:]
     
-    for exchange in recent_history:
+    for i, exchange in enumerate(recent_history, 1):
         if exchange.get('interviewer_question'):
-            context_parts.append(f"INTERVIEWER: {exchange['interviewer_question']}")
+            context_parts.append(f"📝 Exchange {i} - INTERVIEWER: {exchange['interviewer_question']}")
         if exchange.get('candidate_response'):
-            context_parts.append(f"CANDIDATE: {exchange['candidate_response']}")
+            context_parts.append(f"   ↳ CANDIDATE RESPONSE: {exchange['candidate_response']}")
+        context_parts.append("")  # Add spacing between exchanges
     
     if len(context_parts) > 1:  # More than just the header
-        return "\n".join(context_parts) + "\n"
+        return "\n".join(context_parts)
     return ""
 
 def get_interview_answer_prompt(question: str, context: dict, conversation_history: List[Dict] = None) -> str:
@@ -143,33 +144,41 @@ GENERAL APPROACH:
         prompt_parts.append("CANDIDATE PROFILE:")
         prompt_parts.append(candidate_profile)
     
-    # Conversation context (if available and enabled)
+    # Conversation context (if available and enabled) - CLEARLY MARKED AS CONTEXT ONLY
     conversation_context = build_conversation_context(conversation_history)
     if conversation_context:
+        prompt_parts.append("=" * 80)
+        prompt_parts.append("CONVERSATION HISTORY (FOR CONTEXT ONLY - DO NOT RE-ANSWER THESE):")
         prompt_parts.append(conversation_context)
+        prompt_parts.append("=" * 80)
     
-    # Current question
-    prompt_parts.append(f"CURRENT INTERVIEWER QUESTION: \"{question}\"")
+    # Current question - CLEARLY MARKED AS THE QUESTION TO ANSWER
+    prompt_parts.append("🎯 CURRENT QUESTION TO ANSWER:")
+    prompt_parts.append(f"\"{question}\"")
     
     # Final instructions - let AI intelligently handle question type based on system guidelines
     if settings.GENERATE_FULL_ANSWERS:
         prompt_parts.append("""
-RESPONSE INSTRUCTIONS:
-Based on the question type, follow the appropriate guidelines above. Always:
+🎯 RESPONSE INSTRUCTIONS:
+FOCUS ONLY ON THE CURRENT QUESTION ABOVE. The conversation history is provided for context only.
 
+Based on the current question type, follow the appropriate guidelines above. Always:
+
+- ANSWER ONLY THE CURRENT QUESTION - ignore any previous questions in the conversation history
 - Use the candidate's REAL background, projects, and experience from their resume
 - Be authentic and specific - don't make up fake scenarios
-- Apply the technical guidelines automatically based on question context
+- Apply the technical guidelines automatically based on current question context
 - Write as if you ARE the candidate speaking directly to the interviewer
 - Be conversational yet professional
+- If the current question builds on previous context, acknowledge it briefly but focus on what's being asked now
 
-COMPLETE ANSWER:""")
+COMPLETE ANSWER TO THE CURRENT QUESTION:""")
     else:
         prompt_parts.append("""
-BRIEF RESPONSE:
-Provide a concise, authentic answer based on the candidate's real background.
+🎯 BRIEF RESPONSE INSTRUCTIONS:
+FOCUS ONLY ON THE CURRENT QUESTION ABOVE. Provide a concise, authentic answer based on the candidate's real background.
 
-ANSWER:""")
+BRIEF ANSWER TO THE CURRENT QUESTION:""")
     
     return "\n".join(prompt_parts)
 
@@ -204,13 +213,15 @@ Answer:"""
     
     profile_context = "\n".join(profile_parts) if profile_parts else ""
     
-    return f"""Interview question: "{question}"
+    return f"""🎯 CURRENT INTERVIEW QUESTION TO ANSWER:
+"{question}"
 
 CANDIDATE PROFILE:
 {profile_context}
 
-Give a professional answer that draws from your actual background and projects. Be specific and authentic.
+🎯 INSTRUCTIONS:
+Give a professional answer to the CURRENT QUESTION above. Draw from your actual background and projects. Be specific and authentic.
 
-Answer:"""
+ANSWER TO THE CURRENT QUESTION:"""
 
 # Removed manual question categorization - AI now handles this intelligently

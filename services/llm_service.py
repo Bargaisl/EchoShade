@@ -59,6 +59,11 @@ def get_ai_answer(question: str, context: dict) -> str:
     Now provides full answers with dynamic length.
     """
     try:
+        # Log the current question being processed
+        print(f"🎯 PROCESSING CURRENT QUESTION: '{question}'")
+        if conversation_history:
+            print(f"📝 With {len(conversation_history)} previous exchanges in context")
+        
         # Add the question to conversation history
         add_to_conversation_history(interviewer_question=question)
         
