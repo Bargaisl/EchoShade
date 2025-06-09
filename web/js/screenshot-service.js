@@ -509,15 +509,8 @@ class ScreenshotService {
             const result = await this.sendToVisionAI(prompt, screenshots);
             
             if (result.success) {
-                // Display result in conversation
-                if (window.liveInterviewUI) {
-                    liveInterviewUI.addVisionAnalysis(result.analysis, {
-                        screenshotCount: screenshots.length,
-                        model: this.visionConfig.model,
-                        provider: this.visionConfig.provider,
-                        languages: this.programmingLanguages
-                    });
-                }
+                // Note: Vision analysis display is handled by main.js WebSocket message handler
+                // to avoid duplicate display. We just handle UI feedback here.
                 
                 // Clear queue after successful processing
                 this.clearQueue();

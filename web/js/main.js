@@ -424,34 +424,45 @@ function connectWebSocket() {
             // Handle vision analysis results
             const result = data.payload;
             
+            console.log('📥 Received vision analysis result:', result.success ? 'SUCCESS' : 'FAILED');
+            
             if (result.success) {
-                // Display analysis in conversation
+                // Display analysis in conversation (single source of truth)
                 if (window.liveInterviewUI) {
+                    console.log('📺 Displaying vision analysis in conversation');
                     liveInterviewUI.addVisionAnalysis(result.analysis, {
                         screenshotCount: result.screenshot_count,
                         model: result.metadata.model,
                         provider: result.metadata.provider,
                         languages: result.languages
                     });
+                } else {
+                    console.warn('⚠️ liveInterviewUI not available for vision display');
                 }
                 
-                // Notify screenshot service of successful processing
+                // Notify screenshot service of successful processing (no display there)
                 if (window.visionAnalysisResolver) {
+                    console.log('✅ Resolving vision analysis promise');
                     window.visionAnalysisResolver(result);
                     window.visionAnalysisResolver = null;
+                } else {
+                    console.warn('⚠️ No vision analysis resolver found');
                 }
                 
-                devLog("Vision analysis completed successfully:", result);
+                devLog("Vision analysis completed successfully");
             } else {
-                console.error("Vision analysis failed:", result.error);
+                console.error("❌ Vision analysis failed:", result.error);
                 
                 // Notify screenshot service of failed processing
                 if (window.visionAnalysisResolver) {
+                    console.log('❌ Resolving vision analysis promise with error');
                     window.visionAnalysisResolver({
                         success: false,
                         error: result.error
                     });
                     window.visionAnalysisResolver = null;
+                } else {
+                    console.warn('⚠️ No vision analysis resolver found for error handling');
                 }
             }
         } else if (data.type === 'error') {

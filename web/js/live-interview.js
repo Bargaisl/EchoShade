@@ -385,6 +385,13 @@ class LiveInterviewUI {
 
     // Add vision analysis response
     addVisionAnalysis(analysis, metadata = {}) {
+        console.log('🎭 LiveInterviewUI.addVisionAnalysis called:', {
+            analysisLength: analysis?.length || 0,
+            provider: metadata?.provider,
+            model: metadata?.model,
+            screenshotCount: metadata?.screenshotCount
+        });
+        
         const visionElement = this.createVisionAnalysisElement(analysis, metadata);
         this.conversationStream.appendChild(visionElement);
 
@@ -393,6 +400,7 @@ class LiveInterviewUI {
         this.startStreaming(visionElement, analysis, true, () => {
             // On completion, set mode back to ready for live speech
             this.setScrollMode('live_bottom');
+            console.log('🎭 Vision analysis streaming completed');
         });
         
         this.hideActivity();
