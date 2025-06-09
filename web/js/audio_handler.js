@@ -9,6 +9,7 @@ let audioContext = null;
 let micStream = null;
 let systemStream = null;
 let micGainNode = null;
+let screenVideoTrack = null; // Store video track for screenshot reuse
 
 /**
  * Requests permission to use the microphone and populates the dropdown.
@@ -120,8 +121,14 @@ export async function startAudioProcessing(micId, onAudioData) {
         // System audio connects directly (we don't want to mute interviewer)
         systemSource.connect(mixedProcessor);
 
-        // The video track from getDisplayMedia is not needed.
-        systemStream.getVideoTracks().forEach(track => track.stop());
+        // Store the video track for screenshot reuse, but remove it from the stream
+        const videoTracks = systemStream.getVideoTracks();
+        if (videoTracks.length > 0) {
+            screenVideoTrack = videoTracks[0];
+            console.log("📹 Screen video track stored for screenshot reuse");
+        } else {
+            console.warn("⚠️ No video track found in display media stream");
+        }
 
         devLog("✅ Audio processing started successfully");
         return true;
@@ -180,6 +187,22 @@ export function getAudioProcessingMode() {
 }
 
 /**
+ * Gets the screen video track for screenshot capture.
+ * @returns {MediaStreamTrack|null} The screen video track if available.
+ */
+export function getScreenVideoTrack() {
+    return screenVideoTrack;
+}
+
+/**
+ * Checks if screen sharing is available for screenshots.
+ * @returns {boolean} True if screen video track is available and active.
+ */
+export function isScreenSharingAvailable() {
+    return screenVideoTrack && screenVideoTrack.readyState === 'live';
+}
+
+/**
  * Stops all audio streams and closes the AudioContext.
  */
 export function stopAudioProcessing() {
@@ -191,6 +214,11 @@ export function stopAudioProcessing() {
     if (systemStream) {
         systemStream.getTracks().forEach(track => track.stop());
         systemStream = null;
+    }
+    if (screenVideoTrack) {
+        screenVideoTrack.stop();
+        screenVideoTrack = null;
+        console.log("📹 Screen video track stopped");
     }
     if (audioContext && audioContext.state !== 'closed') {
         audioContext.close();

@@ -10,6 +10,7 @@ import liveInterviewUI from './live-interview.js';
 import hotkeyManager from './hotkeys.js';
 import presetManager from './preset-manager.js';
 import screenshotService from './screenshot-service.js';
+import { getScreenVideoTrack, isScreenSharingAvailable } from './audio_handler.js';
 
 // --- State Management ---
 const appState = {
@@ -697,6 +698,10 @@ function getSystemStatus() {
 window.switchPreset = switchPreset;
 window.getSystemStatus = getSystemStatus;
 
+// Make screen capture functions globally accessible
+window.getScreenVideoTrack = getScreenVideoTrack;
+window.isScreenSharingAvailable = isScreenSharingAvailable;
+
 // --- Vision Mode Functions ---
 function toggleVisionMode() {
     if (!appState.selectedVisionProvider.name || !appState.selectedVisionProvider.model) {
@@ -763,6 +768,7 @@ async function processScreenshots() {
 window.toggleVisionMode = toggleVisionMode;
 window.captureScreenshot = captureScreenshot;
 window.processScreenshots = processScreenshots;
+window.sendSocketMessage = sendSocketMessage;
 
 // --- Event Listeners ---
 proceedButton.addEventListener('click', handleOnboarding);

@@ -324,28 +324,52 @@ class ScreenshotService {
         this.isCapturing = true;
         
         try {
-            // Check if screen capture API is available
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-                throw new Error('Screen capture not supported in this browser');
+            // Try to use existing screen video track first
+            let videoTrack = null;
+            
+            // Import audio handler to get existing screen track
+            if (window.getScreenVideoTrack && window.isScreenSharingAvailable) {
+                if (window.isScreenSharingAvailable()) {
+                    videoTrack = window.getScreenVideoTrack();
+                    console.log('📹 Using existing screen video track for screenshot');
+                } else {
+                    console.warn('⚠️ Screen sharing not available, requesting new permission');
+                }
             }
             
-            // Request screen capture
-            const stream = await navigator.mediaDevices.getDisplayMedia({
-                video: {
-                    mediaSource: 'screen',
-                    width: { max: 1920 },
-                    height: { max: 1080 }
+            // Fallback to requesting new permission if no existing track
+            if (!videoTrack) {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                    throw new Error('Screen capture not supported in this browser');
                 }
-            });
+                
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        mediaSource: 'screen',
+                        width: { max: 1920 },
+                        height: { max: 1080 }
+                    }
+                });
+                
+                videoTrack = stream.getVideoTracks()[0];
+                if (!videoTrack) {
+                    throw new Error('No video track available from screen capture');
+                }
+                
+                console.log('📹 Created new screen capture stream for screenshot');
+            }
             
             // Create video element to capture frame
             const video = document.createElement('video');
-            video.srcObject = stream;
+            video.srcObject = new MediaStream([videoTrack]);
             video.play();
             
             // Wait for video to load
-            await new Promise(resolve => {
+            await new Promise((resolve, reject) => {
                 video.onloadedmetadata = resolve;
+                video.onerror = reject;
+                // Add timeout to prevent hanging
+                setTimeout(() => reject(new Error('Video load timeout')), 5000);
             });
             
             // Create canvas and capture frame
@@ -361,8 +385,14 @@ class ScreenshotService {
                 canvas.toBlob(resolve, 'image/jpeg', 0.8);
             });
             
-            // Stop the stream
-            stream.getTracks().forEach(track => track.stop());
+            // Only stop the track if we created a new one (not reusing existing)
+            if (!window.getScreenVideoTrack || videoTrack !== window.getScreenVideoTrack()) {
+                videoTrack.stop();
+                console.log('📹 Stopped temporary screen capture track');
+            }
+            
+            // Clean up video element
+            video.srcObject = null;
             
             // Add to queue
             const screenshot = {
@@ -383,6 +413,8 @@ class ScreenshotService {
             
             if (error.name === 'NotAllowedError') {
                 this.showNotification('❌ Permission Denied', 'Screen capture permission was denied', 'error');
+            } else if (error.message.includes('timeout')) {
+                this.showNotification('❌ Capture Timeout', 'Screenshot capture took too long', 'error');
             } else {
                 this.showNotification('❌ Capture Failed', error.message, 'error');
             }
@@ -469,9 +501,9 @@ class ScreenshotService {
             const prompt = this.generateCodingPrompt();
             const screenshots = this.screenshotQueue.map(s => s.dataUrl);
             
-            console.log('🔄 Processing screenshots with vision AI...');
-            console.log('📝 Prompt:', prompt);
-            console.log('📸 Screenshots:', screenshots.length);
+            console.log('🔄 Processing comprehensive multi-screenshot analysis...');
+            console.log(`📸 Analyzing ${screenshots.length} screenshots together as one complete problem`);
+            console.log('🧠 Generating two distinct solution approaches with full implementations');
             
             // Send to vision processing service
             const result = await this.sendToVisionAI(prompt, screenshots);
@@ -482,15 +514,17 @@ class ScreenshotService {
                     liveInterviewUI.addVisionAnalysis(result.analysis, {
                         screenshotCount: screenshots.length,
                         model: this.visionConfig.model,
+                        provider: this.visionConfig.provider,
                         languages: this.programmingLanguages
                     });
                 }
                 
                 // Clear queue after successful processing
                 this.clearQueue();
-                this.showNotification('✅ Analysis Complete', 'Code analysis added to conversation', 'success');
+                this.showNotification('✅ Comprehensive Analysis Complete', 
+                    `${screenshots.length} screenshots analyzed with 2 solution approaches`, 'success');
             } else {
-                this.showNotification('❌ Processing Failed', result.error || 'Vision AI processing failed', 'error');
+                this.showNotification('❌ Analysis Failed', result.error || 'Vision AI processing failed', 'error');
             }
             
         } catch (error) {
@@ -550,37 +584,35 @@ Focus on being educational and helping understand both the solution and the unde
     
     async sendToVisionAI(prompt, screenshots) {
         try {
-            // This would integrate with your existing WebSocket system
-            // For now, we'll simulate the API call structure
+            console.log(`🔍 Sending ${screenshots.length} screenshots for comprehensive analysis`);
+            console.log('📝 Enhanced prompt for multi-screenshot analysis');
             
             const payload = {
-                type: 'vision_analysis',
-                payload: {
-                    prompt: prompt,
-                    screenshots: screenshots,
-                    visionConfig: this.visionConfig,
-                    languages: this.programmingLanguages
-                }
+                prompt: prompt,
+                screenshots: screenshots,
+                visionConfig: this.visionConfig,
+                languages: this.programmingLanguages
             };
             
             // Send via WebSocket if available
             if (window.sendSocketMessage) {
-                window.sendSocketMessage('vision_analysis', payload.payload);
+                window.sendSocketMessage('vision_analysis', payload);
                 
                 // Return a promise that resolves when we get the response
                 return new Promise((resolve, reject) => {
                     const timeout = setTimeout(() => {
-                        reject(new Error('Vision analysis timeout'));
+                        reject(new Error('Vision analysis timeout (60s)'));
                     }, 60000); // 60 second timeout
                     
                     // This would be handled by the WebSocket message handler
                     window.visionAnalysisResolver = (result) => {
                         clearTimeout(timeout);
+                        console.log(`✅ Vision analysis resolver called with result:`, result.success ? 'SUCCESS' : 'FAILED');
                         resolve(result);
                     };
                 });
             } else {
-                throw new Error('WebSocket not available');
+                throw new Error('WebSocket not available - please ensure interview is active');
             }
             
         } catch (error) {
