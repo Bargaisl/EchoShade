@@ -176,6 +176,9 @@ async def websocket_endpoint(websocket: WebSocket):
                         # Initialize shared candidate context
                         multi_llm_manager.initialize_candidate_context(onboarding_context)
                         
+                        # Share context manager with vision service for conversation history
+                        vision_service.set_context_manager(multi_llm_manager.shared_context)
+                        
                         # Perform initial health checks
                         health_results = await multi_llm_manager.perform_health_checks()
                         

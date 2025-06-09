@@ -98,6 +98,9 @@ class LLMManager:
             
             answer = chat_completion.choices[0].message.content.strip()
             
+            # Add AI response to conversation history
+            self.context_manager.add_ai_response(answer, "normal")
+            
             # Update health status
             self.is_healthy = True
             self.error_count = 0

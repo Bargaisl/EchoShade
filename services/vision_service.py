@@ -18,6 +18,7 @@ class VisionManager:
         self.last_error = None
         self.error_count = 0
         self.last_success_time = datetime.now()
+        self.context_manager = None  # Will be set by VisionService
         
         try:
             self.client = AsyncOpenAI(base_url=base_url, api_key=api_key)
@@ -27,6 +28,10 @@ class VisionManager:
             self.is_healthy = False
             self.last_error = str(e)
             print(f"❌ CRITICAL: Failed to initialize VisionManager for {self.provider_name}: {e}")
+
+    def set_context_manager(self, context_manager):
+        """Set the shared context manager"""
+        self.context_manager = context_manager
 
     async def health_check(self) -> bool:
         """Check if the vision provider is healthy and responsive"""
@@ -93,6 +98,10 @@ class VisionManager:
             )
             
             analysis = chat_completion.choices[0].message.content.strip()
+            
+            # Add vision analysis to conversation history if context manager available
+            if self.context_manager:
+                self.context_manager.add_ai_response(analysis, "vision")
             
             # Update health status
             self.is_healthy = True
@@ -170,6 +179,14 @@ class VisionService:
     
     def __init__(self):
         self.vision_managers: Dict[str, VisionManager] = {}
+        self.context_manager = None
+    
+    def set_context_manager(self, context_manager):
+        """Set the shared context manager for all vision managers"""
+        self.context_manager = context_manager
+        # Update all existing vision managers
+        for manager in self.vision_managers.values():
+            manager.set_context_manager(context_manager)
         
     def load_vision_providers(self) -> bool:
         """Load available vision providers from configuration"""
@@ -187,12 +204,17 @@ class VisionService:
                     for model_name in provider_config["visionModels"]:
                         manager_key = f"{provider_name}_{model_name}"
                         
-                        self.vision_managers[manager_key] = VisionManager(
+                        manager = VisionManager(
                             provider_name=provider_name,
                             base_url=provider_config["baseURL"],
                             api_key=provider_config["apiKey"],
                             model_name=model_name
                         )
+                        # Set context manager if available
+                        if self.context_manager:
+                            manager.set_context_manager(self.context_manager)
+                        
+                        self.vision_managers[manager_key] = manager
                         vision_providers_loaded += 1
             
             print(f"✅ VisionService initialized with {vision_providers_loaded} vision models")

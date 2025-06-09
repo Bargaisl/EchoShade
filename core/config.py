@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # AI Configuration - Defaults match .env file values
     TRACK_CANDIDATE_RESPONSES: bool = True
     INCLUDE_CONVERSATION_HISTORY: bool = True
-    MAX_CONVERSATION_HISTORY: int = 5
+    MAX_CONVERSATION_HISTORY: int = 6
     GENERATE_FULL_ANSWERS: bool = True
     PERSONALIZE_ANSWERS: bool = True
 

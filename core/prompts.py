@@ -113,14 +113,20 @@ GENERAL APPROACH:
     prompt_parts.append(build_unlimited_candidate_profile(persistent_context))
     prompt_parts.append("=" * 100)
     
-    # Recent conversation history (limited to 5 exchanges)
+    # Recent conversation history (limited to MAX_CONVERSATION_HISTORY exchanges)
     if conversation_history:
-        prompt_parts.append("📝 RECENT CONVERSATION HISTORY (LAST 5 EXCHANGES FOR CONTEXT):")
+        prompt_parts.append(f"📝 RECENT CONVERSATION HISTORY (LAST {settings.MAX_CONVERSATION_HISTORY} EXCHANGES FOR CONTEXT):")
         for i, exchange in enumerate(conversation_history, 1):
             if exchange.get('interviewer_question'):
                 prompt_parts.append(f"Exchange {i} - INTERVIEWER: {exchange['interviewer_question']}")
             if exchange.get('candidate_response'):
                 prompt_parts.append(f"           ↳ CANDIDATE: {exchange['candidate_response']}")
+            if exchange.get('ai_response'):
+                # Truncate very long AI responses for context (keep first 500 chars)
+                ai_response = exchange['ai_response']
+                if len(ai_response) > 500:
+                    ai_response = ai_response[:500] + "... [truncated for context]"
+                prompt_parts.append(f"           ↳ AI ASSISTANT: {ai_response}")
             prompt_parts.append("")
         prompt_parts.append("=" * 100)
     
