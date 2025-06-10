@@ -160,7 +160,7 @@ function switchPreset(presetKey) {
 
 // --- Transparency Functions ---
 async function setTransparency(level) {
-    return await webSocketHandler.setTransparency(level);
+    return await liveInterviewUI.setTransparency(level);
 }
 
 function getSystemStatus() {

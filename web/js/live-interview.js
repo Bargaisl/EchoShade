@@ -1235,6 +1235,79 @@ class LiveInterviewUI {
         }
         return false;
     }
+
+    // --- Transparency Control Methods ---
+    // Add transparency methods to LiveInterviewUI for hotkey integration
+    
+    async setTransparency(level) {
+        console.log(`🪟 Setting transparency level: ${level}`);
+        
+        // Handle both numeric (1,2,3) and string ("transparent","semi","opaque") levels
+        // for compatibility with both hotkey systems and direct calls
+        let targetMode;
+        
+        if (typeof level === 'number') {
+            // Numeric levels from original hotkey system (Alt+1, Alt+2, Alt+3)
+            switch(level) {
+                case 1:
+                    targetMode = 'transparent';
+                    break;
+                case 2:
+                    targetMode = 'semi';
+                    break;
+                case 3:
+                    targetMode = 'opaque';
+                    break;
+                default:
+                    console.warn(`⚠️ Unknown numeric transparency level: ${level}`);
+                    return false;
+            }
+        } else if (typeof level === 'string') {
+            // String levels from global hotkey system
+            targetMode = level.toLowerCase();
+        } else {
+            console.warn(`⚠️ Invalid transparency level type: ${typeof level}`);
+            return false;
+        }
+        
+        // Execute the appropriate transparency preset
+        switch(targetMode) {
+            case 'transparent':
+                console.log('🪟 Setting transparent mode (40% opacity)');
+                return await this.controls.setInterviewMode();
+            case 'semi':
+            case 'semi-transparent':
+                console.log('🪟 Setting semi-transparent mode (70% opacity)');
+                return await this.controls.setSemiTransparentMode();
+            case 'opaque':
+                console.log('🪟 Setting opaque mode (100% opacity)');
+                return await this.controls.setOpaqueMode();
+            default:
+                console.warn(`⚠️ Unknown transparency mode: ${targetMode}`);
+                return false;
+        }
+    }
+
+    // Expose other transparency methods for consistency
+    async setWindowTransparency(transparency) {
+        return await this.controls.setWindowTransparency(transparency);
+    }
+
+    async setWindowTransparencyPercent(percent) {
+        return await this.controls.setWindowTransparencyPercent(percent);
+    }
+
+    async setInterviewMode() {
+        return await this.controls.setInterviewMode();
+    }
+
+    async setSemiTransparentMode() {
+        return await this.controls.setSemiTransparentMode();
+    }
+
+    async setOpaqueMode() {
+        return await this.controls.setOpaqueMode();
+    }
 }
 
 // Create global instance
