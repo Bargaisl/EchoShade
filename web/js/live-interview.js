@@ -12,6 +12,7 @@ class LiveInterviewUI {
         this.endButton = null;
         this.muteButton = null;
         this.currentInterviewerElement = null; // Track interviewer message separately
+        this.currentCandidateElement = null; // Track candidate message separately
         this.currentAIElement = null; // Track AI message separately
         this.isStreaming = false;
         this.eventsInitialized = false;
@@ -373,6 +374,42 @@ class LiveInterviewUI {
         }
     }
 
+    // Add candidate transcript (for when diarization is disabled - all speech from candidate)
+    addCandidateTranscript(transcript, isInterim = false) {
+        // Live speech is high priority - but respect reading mode
+        if (!this.scrollState.userReadingMode) {
+            this.setScrollMode('live_bottom');
+        }
+        this.scrollState.isLiveSpeaking = true;
+
+        if (isInterim) {
+            if (!this.currentCandidateElement) {
+                this.currentCandidateElement = this.createMessageElement('', 'candidate');
+                this.conversationStream.appendChild(this.currentCandidateElement);
+                this.updateEmptyState();
+            }
+            this.updateCandidateMessage(this.currentCandidateElement.querySelector('.streaming-text').textContent + ' ' + transcript);
+        } else {
+            if (this.currentCandidateElement) {
+                this.finalizeCandidateMessage(transcript);
+            } else {
+                this.addMessage(transcript, 'candidate');
+            }
+            this.hideActivity();
+            this.updateEmptyState();
+            this.scrollState.isLiveSpeaking = false;
+        }
+        
+        // For live speech, be more aggressive about scrolling (but still respect reading mode)
+        if (!this.scrollState.userReadingMode) {
+            this.scrollToBottom();
+        } else {
+            // Notify user of new content if they're reading
+            this.scrollState.newContentPending = true;
+            this.showResumeScrollButton();
+        }
+    }
+
     // Add AI response (legacy method)
     addAIResponse(response, metadata = {}) {
         // Filter thinking content from response
@@ -458,7 +495,19 @@ class LiveInterviewUI {
         
         const label = document.createElement('span');
         label.className = 'label';
-        label.textContent = type === 'interviewer' ? '🎤 Interviewer' : '🤖 AI Assistant';
+        
+        // Set label based on type
+        switch (type) {
+            case 'interviewer':
+                label.textContent = '🎤 Interviewer';
+                break;
+            case 'candidate':
+                label.textContent = '👤 Candidate';
+                break;
+            default:
+                label.textContent = '🤖 AI Assistant';
+                break;
+        }
         
         const contentDiv = document.createElement('div');
         contentDiv.className = 'streaming-text';
@@ -877,6 +926,44 @@ class LiveInterviewUI {
         }
     }
 
+    // Update candidate message (for interim results)
+    updateCandidateMessage(content) {
+        if (this.currentCandidateElement) {
+            const contentDiv = this.currentCandidateElement.querySelector('.streaming-text');
+            
+            // Mark as interim to hide typing cursor
+            this.currentCandidateElement.classList.add('interim');
+            
+            // Clear and update instantly using streaming module
+            contentDiv.innerHTML = '';
+            this.streaming.displayInstantText(contentDiv, content);
+        }
+    }
+
+    // Finalize candidate message (for final results)
+    finalizeCandidateMessage(content) {
+        if (this.currentCandidateElement) {
+            // Remove interim class to show typing animation for final result
+            this.currentCandidateElement.classList.remove('interim');
+            
+            const contentDiv = this.currentCandidateElement.querySelector('.streaming-text');
+            contentDiv.innerHTML = '';
+            
+            // Use streaming module for final content
+            this.streaming.streamContent(contentDiv, content, this.streaming.config.streamingSpeed).then(() => {
+                if (this.currentCandidateElement) {
+                    this.currentCandidateElement.classList.add('complete');
+                }
+            });
+            
+            // Clear the reference since this is final
+            this.currentCandidateElement = null;
+            
+            // Reset auto-scroll for new response
+            this.autoScrollEnabled = true;
+        }
+    }
+
     // --- New Smart Scrolling System ---
 
     setScrollMode(mode, targetElement = null) {
@@ -1130,6 +1217,7 @@ class LiveInterviewUI {
         
         // Clear all references to prevent multiple elements
         this.currentInterviewerElement = null;
+        this.currentCandidateElement = null;
         this.currentAIElement = null;
         this.currentStreamingElement = null;
         this.currentStreamingContent = null;

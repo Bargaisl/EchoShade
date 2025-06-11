@@ -234,7 +234,7 @@ class InterviewSession:
                 self.silence_timer.cancel()
             
             async def delayed_processing():
-                await asyncio.sleep(0.8)
+                await asyncio.sleep(1.5)  # Wait for 1 second of silence
                 await self._process_aggregated_transcript()
             
             self.silence_timer = asyncio.create_task(delayed_processing())

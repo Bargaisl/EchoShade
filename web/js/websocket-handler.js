@@ -187,10 +187,24 @@ export class WebSocketHandler {
     }
 
     handleTranscriptUpdate(payload) {
-        if (payload.is_final) {
-            liveInterviewUI.addInterviewerQuestion(payload.transcript, false);
+        // With diarization disabled, all speech comes from speaker 0 (candidate)
+        // With diarization enabled, speaker 0 = candidate, speaker 1+ = interviewer(s)
+        const speakerId = payload.speaker !== undefined ? payload.speaker : 0;
+        
+        if (speakerId === 0) {
+            // Speaker 0 is the candidate
+            if (payload.is_final) {
+                liveInterviewUI.addCandidateTranscript(payload.transcript, false);
+            } else {
+                liveInterviewUI.addCandidateTranscript(payload.transcript, true);
+            }
         } else {
-            liveInterviewUI.addInterviewerQuestion(payload.transcript, true);
+            // Speaker 1+ are interviewers (when diarization is enabled)
+            if (payload.is_final) {
+                liveInterviewUI.addInterviewerQuestion(payload.transcript, false);
+            } else {
+                liveInterviewUI.addInterviewerQuestion(payload.transcript, true);
+            }
         }
     }
     

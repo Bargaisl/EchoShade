@@ -189,11 +189,11 @@ class DeepgramManager:
             encoding="linear16",
             channels=1,
             sample_rate=48000,  # Ensure this matches your audio source
-            diarize=True,
+            diarize=False,
             punctuate=True,
             # Critical speech detection parameters
-            utterance_end_ms=1800,    # Wait 1.2 seconds after speech ends to finalize
-            endpointing=1100,          # Wait 0.8 seconds of silence before endpoint detection
+            utterance_end_ms=1000,    # Wait 1.2 seconds after speech ends to finalize
+            endpointing=600,          # Wait 0.8 seconds of silence before endpoint detection
             # Additional settings
             vad_events=True,          # Enable VAD for better pause handling
             interim_results=True,     # Enable interim results for real-time feedback
@@ -239,18 +239,23 @@ class DeepgramManager:
                     print(f"🔍 Deepgram result type: {result_type}, is_final: {is_final}")
                     
                     # Get speaker from words array (Deepgram's diarization format)
-                    speaker = 0  # Default to candidate
+                    speaker = 0  # Default to candidate (when diarization is disabled, all speech is from speaker 0)
                     
-                    # For live streaming, speaker info is in the words array
-                    if hasattr(alternative, 'words') and len(alternative.words) > 0:
-                        # Use the speaker of the first word
-                        first_word = alternative.words[0]
-                        if hasattr(first_word, 'speaker') and first_word.speaker is not None:
-                            speaker = first_word.speaker
-                        else:
-                            # Fallback: try to access speaker as dictionary key
-                            if hasattr(first_word, '__getitem__') and 'speaker' in first_word:
+                    # Only try to extract speaker info if diarization was enabled
+                    # When diarization is disabled, Deepgram doesn't provide speaker information
+                    try:
+                        if hasattr(alternative, 'words') and len(alternative.words) > 0:
+                            # Use the speaker of the first word
+                            first_word = alternative.words[0]
+                            if hasattr(first_word, 'speaker') and first_word.speaker is not None:
+                                speaker = first_word.speaker
+                            elif hasattr(first_word, '__getitem__') and 'speaker' in first_word:
+                                # Fallback: try to access speaker as dictionary key
                                 speaker = first_word['speaker']
+                    except (AttributeError, KeyError, IndexError):
+                        # If any error occurs accessing speaker info, stick with default (speaker 0)
+                        # This is expected when diarization is disabled
+                        pass
                     
                     if is_final:
                         # Process final results immediately - no buffering
