@@ -794,85 +794,106 @@ class WindowManager:
 
         def on_hide_show():
             self.toggle_visibility()
+            return False
 
         def on_toggle_ghost():
             self.toggle_ghost_mode()
+            return False
 
         def on_toggle_vision_mode():
             """Toggle vision mode (Alt+V)"""
             self.send_vision_command("toggle_vision_mode")
+            return False
 
         def on_capture_screenshot():
             """Capture screenshot (Alt+S)"""
             self.send_vision_command("capture_screenshot")
+            return False
 
         def on_process_screenshots():
             """Process screenshots with AI (Alt+P)"""
             self.send_vision_command("process_screenshots")
+            return False
 
         def on_switch_primary():
             """Switch to primary AI preset (Alt+Q)"""
             self.send_preset_switch_signal("primary")
+            return False
 
         def on_switch_secondary():
             """Switch to secondary AI preset (Alt+W)"""
             self.send_preset_switch_signal("secondary")
+            return False
 
         def on_auto_select():
             """Auto-select best available AI preset (Alt+E)"""
             self.send_context_aware_command("auto_select_preset")
+            return False
 
         def on_switch_vision_model():
             """Switch vision model (Alt+T)"""
             self.send_vision_switch_command("switch_vision_model")
+            return False
 
         def on_transparency_transparent():
             """Set window to transparent (40% opacity) - Alt+1"""
             self.send_transparency_command("transparent")
+            return False
 
         def on_transparency_semi():
             """Set window to semi-transparent (70% opacity) - Alt+2"""
             self.send_transparency_command("semi")
+            return False
 
         def on_transparency_opaque():
             """Set window to opaque (100% opacity) - Alt+3"""
             self.send_transparency_command("opaque")
+            return False
 
         def on_toggle_mic_mute():
             """Toggle microphone mute (Alt+M)"""
             self.send_audio_command("toggle_mic_mute")
+            return False
 
         def on_toggle_universal_mute():
             """Toggle universal mute/pause (Alt+U)"""
             self.send_audio_command("toggle_universal_mute")
+            return False
 
         def on_reset_screenshot_queue():
             """Reset/clear screenshot queue (Alt+R)"""
             self.send_vision_command("reset_screenshot_queue")
+            return False
 
         def on_enable_proctoring_stealth():
             """Enable proctoring stealth mode (Alt+Shift+S)"""
             self.enable_proctoring_stealth_mode()
+            return False
 
         def on_move_left():
             """Move window left (Alt+Left)"""
             self.move_window(-20, 0)
+            return False
 
         def on_move_right():
             """Move window right (Alt+Right)"""
             self.move_window(20, 0)
+            return False
 
         def on_move_up():
             """Move window up (Alt+Up)"""
             self.move_window(0, -20)
+            return False
 
         def on_move_down():
             """Move window down (Alt+Down)"""
             self.move_window(0, 20)
+            return False
 
         def on_reset_interview():
             """Reset interview session (Alt+O)"""
             self.send_interview_command("reset_interview")
+            return False
 
         hotkey_map = {
             '<alt>+x': on_toggle_ghost,
