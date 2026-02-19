@@ -402,9 +402,11 @@ Never leave the interview window. Control everything instantly with our ergonomi
 ### Step 1 · Clone & Install
 
 ```bash
-git clone https://github.com/yourusername/aura-ai-interview-coach.git
-cd aura-ai-interview-coach
+git clone https://github.com/Rkcr7/Aura-AI
+cd Aura-AI
 
+click run.bat to auto install depedencies
+OR
 # Create & activate virtual environment
 python -m venv venv
 venv\Scripts\activate
@@ -780,8 +782,10 @@ By downloading, installing, or using Aura, you acknowledge that you have read, u
 ## 🤝 Contributing
 
 ```bash
-git clone https://github.com/yourusername/aura-ai-interview-coach.git
-cd aura-ai-interview-coach
+git clone https://github.com/Rkcr7/Aura-AI
+cd Aura-AI
+Click run.bat to auto install dependecies
+OR
 python -m venv venv && venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env && cp ai_providers.example.json ai_providers.json
