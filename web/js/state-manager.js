@@ -83,10 +83,6 @@ export class StateManager {
 
     handleOnboarding() {
         const requiredFields = {
-            'user-name': 'Name',
-            'user-company': 'Company',
-            'user-role': 'Role',
-            'user-resume': 'Resume',
             'ai-provider-select': 'AI Provider',
             'ai-model-select': 'AI Model'
         };
@@ -100,12 +96,6 @@ export class StateManager {
                 allValid = false;
                 break;
             }
-        }
-
-        const focusCheckboxes = Array.from(this.onboardingForm.focusCheckboxes || []).filter(cb => cb.checked);
-        if (focusCheckboxes.length === 0) {
-            alert('Please select at least one Interview Focus.');
-            allValid = false;
         }
 
         if (!allValid) return false;
@@ -146,19 +136,19 @@ export class StateManager {
             return false;
         }
 
-        // Store validated data
-        const focus = focusCheckboxes.map(cb => cb.value);
+        // Silent candidate default data to prevent backend constraints
         const selectedLanguages = Array.from(this.onboardingForm.languageCheckboxes || [])
             .filter(cb => cb.checked)
             .map(cb => cb.value);
 
         this.appState.onboardingData = {
-            name: this.onboardingForm.name?.value || '',
-            company: this.onboardingForm.company?.value || '',
-            role: this.onboardingForm.role?.value || '',
-            resume: this.onboardingForm.resume?.value || '',
-            focus: focus,
-            objectives: this.onboardingForm.objectives?.value || '',
+            name: 'User',
+            company: 'Company',
+            role: 'Candidate',
+            resume: 'Resume text',
+            focus: ['coding'],
+            objectives: '',
+            examMaterials: document.getElementById('exam-materials')?.value || '',
         };
 
         this.appState.selectedProvider.name = this.onboardingForm.providerSelect?.value || null;

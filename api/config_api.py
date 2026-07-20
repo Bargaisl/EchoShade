@@ -70,7 +70,9 @@ async def get_ai_providers():
                 "defaultVisionPrimary": p.get("defaultVisionPrimary", False),
                 "defaultVisionSecondary": p.get("defaultVisionSecondary", False),
                 "defaultModel": p.get("defaultModel"),
+                "defaultSecondaryModel": p.get("defaultSecondaryModel"),
                 "defaultVisionModel": p.get("defaultVisionModel"),
+                "defaultVisionSecondaryModel": p.get("defaultVisionSecondaryModel"),
                 # Keep legacy default for backward compatibility
                 "default": p.get("defaultPrimary", False)
             }

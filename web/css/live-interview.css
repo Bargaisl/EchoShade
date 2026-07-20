@@ -118,14 +118,13 @@
 }
 
 .mute-btn {
-    background: rgba(0, 0, 0, var(--content-transparency));
-    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--text-color);
     padding: 0.5rem 1rem;
-    border-radius: 3px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
+    transition: all 0.2s ease;
     opacity: 0.8;
     display: flex;
     align-items: center;
@@ -135,55 +134,52 @@
 
 .mute-btn:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-0.5px);
 }
 
 .mute-btn.muted {
-    background: rgba(255, 87, 87, 0.3);
-    border-color: rgba(255, 87, 87, 0.5);
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.45);
+    color: #f87171;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
 }
 
 .mute-btn.muted .mute-icon {
-    opacity: 0.5;
-}
-
-.mute-btn.muted .mute-text::after {
-    content: "d";
+    opacity: 0.8;
 }
 
 .end-btn {
-    background: rgba(0, 0, 0, var(--content-transparency));
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #f87171;
     padding: 0.5rem 1rem;
-    border-radius: 3px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
+    transition: all 0.2s ease;
     opacity: 0.8;
 }
 
 .end-btn:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(239, 68, 68, 0.22);
+    border-color: rgba(239, 68, 68, 0.5);
+    transform: translateY(-0.5px);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
 }
 
 .reset-btn {
-    background: rgba(255, 193, 7, 0.2);
-    border: 1px solid rgba(255, 193, 7, 0.4);
-    color: #ffc107;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: #fbbf24;
     padding: 0.5rem 1rem;
-    border-radius: 3px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
+    transition: all 0.2s ease;
     opacity: 0.8;
 }
 
-.reset-btn:hover {
-    opacity: 1;
-    background: rgba(255, 193, 7, 0.3);
-}
 
 /* Main Content Area */
 .interview-content {
@@ -204,6 +200,11 @@
     flex-direction: column;
     gap: clamp(0.75rem, 2vw, 1.5rem);
     box-sizing: border-box;
+    /* GPU acceleration for smooth scrolling */
+    will-change: scroll-position;
+    transform: translateZ(0);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 /* When conversation stream has no messages, don't let it expand */
@@ -230,9 +231,16 @@
 .message {
     margin-bottom: 0;
     opacity: 0;
-    animation: fadeInUp 0.6s ease forwards;
+    animation: fadeInUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     box-sizing: border-box;
     min-width: 0; /* Critical fix for flexbox wrapping */
+    /* GPU layer for smooth fade-in */
+    will-change: opacity, transform;
+    backface-visibility: hidden;
+}
+
+.message.complete {
+    will-change: auto; /* Release GPU hint once animation is done */
 }
 
 .message:last-child {
@@ -242,7 +250,7 @@
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(12px);
     }
     to {
         opacity: 1;
@@ -252,42 +260,94 @@
 
 /* Interviewer Message */
 .message.interviewer {
-    background: rgba(0, 0, 0, var(--content-transparency));
-    border-left: 3px solid var(--border-color);
-    border-radius: 0;
+    background: rgba(30, 41, 59, 0.4);
+    border-left: 4px solid #3b82f6; /* Glowing blue left border */
+    border-radius: var(--radius-md);
     padding: clamp(0.75rem, 3vw, 1.5rem);
-    backdrop-filter: blur(5px);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-left-width: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 8px;
 }
 
 .message.interviewer .label {
-    color: var(--text-color);
-    font-weight: 600;
+    color: #60a5fa; /* Blue text */
+    font-weight: 700;
     font-size: 0.8rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
     margin-bottom: 0.5rem;
-    display: block;
-    opacity: 0.7;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Candidate Message */
+.message.candidate {
+    background: rgba(51, 65, 85, 0.3);
+    border-left: 4px solid #64748b; /* Sleek grey left border */
+    border-radius: var(--radius-md);
+    padding: clamp(0.75rem, 3vw, 1.5rem);
+    border: 1px solid rgba(100, 116, 139, 0.15);
+    border-left-width: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 8px;
+}
+
+.message.candidate .label {
+    color: #94a3b8; /* Slate text */
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    display: inline-flex;
+    align-items: center;
 }
 
 /* AI Response Message */
 .message.ai-response {
-    background: rgba(0, 0, 0, var(--content-transparency));
-    border-left: 3px solid var(--border-color);
-    border-radius: 0;
+    background: rgba(15, 23, 42, 0.45);
+    border-left: 4px solid var(--accent-indigo); /* Deep indigo glow */
+    border-radius: var(--radius-md);
     padding: clamp(0.75rem, 3vw, 1.5rem);
-    backdrop-filter: blur(5px);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-left-width: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    margin-bottom: 12px;
 }
 
 .message.ai-response .label {
-    color: var(--text-color);
-    font-weight: 600;
+    color: #a5b4fc; /* Indigo-light text */
+    font-weight: 700;
     font-size: 0.8rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
     margin-bottom: 0.5rem;
-    display: block;
-    opacity: 0.7;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Vision Analysis Response */
+.message.vision-analysis, .message.ai-response.vision-analysis {
+    background: rgba(16, 185, 129, 0.08) !important;
+    border-left: 4px solid #10b981 !important; /* Glowing emerald border */
+    border-radius: var(--radius-md) !important;
+    padding: clamp(0.75rem, 3vw, 1.5rem) !important;
+    border: 1px solid rgba(16, 185, 129, 0.15) !important;
+    border-left-width: 4px !important;
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.1) !important;
+    margin-bottom: 12px !important;
+}
+
+.message.ai-response.vision-analysis .label {
+    color: #34d399 !important; /* Emerald-light text */
+    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    margin-bottom: 0.5rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
 }
 
 /* Streaming Text Effect */
@@ -818,3 +878,296 @@
 .streaming-text p + h1, .streaming-text p + h2, .streaming-text p + h3, .streaming-text p + h4, .streaming-text p + h5, .streaming-text p + h6 {
     margin-top: 1.3rem !important;
 } 
+
+/* Mobile Status Capsule */
+.mobile-status-pill {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    height: 28px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 99px;
+    display: none; /* Managed by JS switchView */
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #f1f5f9;
+    z-index: 9999;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    pointer-events: auto; /* Allow clicks on spans */
+}
+
+.mobile-status-pill span {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.mobile-status-pill span:active {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(0.92);
+}
+
+.mobile-status-pill span.active {
+    color: #818cf8;
+    text-shadow: 0 0 6px rgba(129, 140, 248, 0.6);
+}
+
+.mobile-status-pill span.success {
+    color: #34d399;
+    text-shadow: 0 0 6px rgba(52, 211, 153, 0.6);
+}
+
+.mobile-status-pill span.danger {
+    color: #f87171;
+    text-shadow: 0 0 6px rgba(248, 113, 113, 0.6);
+}
+
+/* Mobile Remote Controls Panel (Horizontal Explicit Buttons Style) */
+.mobile-remote-controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(76px + env(safe-area-inset-bottom));
+    background: #0f172a; /* Solid dark background to avoid visibility conflicts */
+    border-top: 1.5px solid rgba(255, 255, 255, 0.1);
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 12px calc(8px + env(safe-area-inset-bottom)) 12px; /* Bottom padding for modern phone home indicators */
+    gap: 8px;
+    z-index: 10000;
+    box-shadow: 0 -6px 25px rgba(0, 0, 0, 0.6);
+    box-sizing: border-box;
+}
+
+.mobile-remote-controls.hidden {
+    display: none !important;
+}
+
+.remote-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px; /* Modernized rounded corner */
+    color: #ffffff; /* Explicit high-contrast white text */
+    padding: 8px 0;
+    cursor: pointer;
+    flex: 1;
+    height: 54px; /* Increased from 46px - taller button vertically! */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+}
+
+.remote-btn .icon {
+    font-size: 19px; /* Slightly larger icon */
+    margin-bottom: 2px;
+    transition: all 0.2s ease;
+    display: block;
+}
+
+.remote-btn .label {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: block;
+}
+
+.remote-btn:active {
+    transform: scale(0.92);
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.remote-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Explicit Active Toggles */
+.remote-btn.active, .remote-btn.toggle-vision.active {
+    background: linear-gradient(135deg, #5850ec, #8f3af7) !important;
+    border-color: #818cf8 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.45);
+}
+
+.remote-btn.active .icon, .remote-btn.toggle-vision.active .icon {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+}
+
+/* Explicit Glow on Process queue */
+.remote-btn.process.glow {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border-color: #10b981 !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+}
+
+/* Queue count badge */
+.remote-btn .badge {
+    position: absolute;
+    top: -4px;
+    right: 18%;
+    background: #ef4444;
+    color: white;
+    font-size: 8px;
+    font-weight: 800;
+    min-width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #0f172a;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-sizing: border-box;
+    padding: 0;
+}
+
+.remote-btn .badge.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Mobile Client General Overrides */
+body.mobile-client #live-view {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+body.mobile-client .live-header {
+    display: none !important;
+}
+
+body.mobile-client .live-interview-container {
+    height: 100dvh;
+    height: 100vh; /* Fallback */
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important; /* MATCH high bottom bar height */
+    box-sizing: border-box;
+}
+
+body.mobile-client .interview-content {
+    height: calc(100dvh - 76px - env(safe-area-inset-bottom)) !important;
+    height: calc(100vh - 74px) !important; /* Fallback */
+    max-height: calc(100dvh - 76px - env(safe-area-inset-bottom)) !important;
+    max-height: calc(100vh - 74px) !important; /* Fallback */
+    padding-bottom: 12px;
+    box-sizing: border-box;
+}
+
+/* Ensure child elements of buttons are completely transparent to clicks on mobile */
+.remote-btn * {
+    pointer-events: none;
+}
+
+/* ============================================================
+   LANDSCAPE ORIENTATION
+   The physical bottom of the phone is now on the RIGHT side.
+   Panel moves from bottom -> right edge and stacks vertically.
+   ============================================================ */
+@media (orientation: landscape) and (max-height: 600px) {
+
+    /* Status pill stays top-right, slightly smaller */
+    .mobile-status-pill {
+        top: 5px;
+        right: 5px;
+        height: 22px;
+        gap: 6px;
+        padding: 0 8px;
+        font-size: 9px;
+    }
+
+    /* Panel: right side, full height, fixed width */
+    .mobile-remote-controls {
+        /* Reset bottom-bar geometry */
+        bottom: 0;
+        top: 0;
+        left: auto;
+        right: 0;
+        width: 68px;
+        height: 100% !important;
+
+        /* Stack buttons vertically */
+        flex-direction: column !important;
+        justify-content: space-evenly;
+        align-items: center;
+
+        /* Re-style the border */
+        border-top: none;
+        border-left: 1px solid rgba(99, 102, 241, 0.2);
+
+        /* Keep gradient but now left->right */
+        background: linear-gradient(270deg, #0c1121 0%, #0f172a 100%);
+        box-shadow: -8px 0 32px rgba(0, 0, 0, 0.7), -1px 0 0 rgba(255,255,255,0.04);
+
+        padding: 8px 4px;
+        gap: 6px;
+    }
+
+    /* Buttons: square-ish, full panel width */
+    .remote-btn {
+        flex-direction: column;   /* icon on top, label below — same as portrait */
+        justify-content: center;
+        align-items: center;
+        gap: 3px;
+
+        width: 100%;
+        flex: 1;                  /* distribute height evenly */
+        height: unset;            /* let flex decide */
+        max-height: 64px;
+
+        padding: 6px 4px;
+        border-radius: 10px;
+    }
+
+    .remote-btn .icon {
+        font-size: 18px;
+        margin-bottom: 0;
+    }
+
+    .remote-btn .label {
+        font-size: 8px;
+        letter-spacing: 0.04em;
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    /* Badge: top-right corner of the button */
+    .remote-btn .badge {
+        top: -4px;
+        right: 4px;
+    }
+
+    /* Content area: padding moves to right instead of bottom */
+    body.mobile-client .live-interview-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-bottom: 0 !important;
+        padding-right: 68px !important;
+    }
+
+    body.mobile-client .interview-content {
+        height: 100vh !important;
+        max-height: 100vh !important;
+        padding-bottom: 8px;
+    }
+}

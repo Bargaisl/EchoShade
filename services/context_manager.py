@@ -29,6 +29,7 @@ class PersistentContextManager:
             'target_role': '',
             'complete_resume': '',        # UNLIMITED - Full resume
             'complete_job_description': '',  # UNLIMITED - Full job description
+            'exam_materials': '',         # EXAM CHEAT SHEET
             'focus_areas': [],
             'additional_context': {},
             'created_at': None
@@ -44,6 +45,7 @@ class PersistentContextManager:
             'target_role': onboarding_data.get('role', ''),
             'complete_resume': onboarding_data.get('resume', ''),  # FULL CONTENT
             'complete_job_description': onboarding_data.get('objectives', ''),  # FULL CONTENT
+            'exam_materials': onboarding_data.get('examMaterials', ''),  # CHEAT SHEET
             'focus_areas': onboarding_data.get('focus', []),
             'created_at': datetime.now().isoformat()
         })
@@ -77,7 +79,7 @@ class PersistentContextManager:
         if len(self.conversation_history) > max_history:
             self.conversation_history = self.conversation_history[-max_history:]
     
-    def add_ai_response(self, ai_response: str, response_type: str = "normal"):
+    def add_ai_response(self, ai_response: str, response_type: str = "normal", model: str = None, provider: str = None):
         """Add AI response to conversation history"""
         # Prefix vision analysis responses to distinguish them
         if response_type == "vision":
@@ -89,13 +91,19 @@ class PersistentContextManager:
         # Add to the last exchange if it exists, otherwise create a new one
         if self.conversation_history:
             self.conversation_history[-1]['ai_response'] = filtered_ai_response
+            if model:
+                self.conversation_history[-1]['model'] = model
+            if provider:
+                self.conversation_history[-1]['provider'] = provider
         else:
             # Create a new exchange with just the AI response
             exchange = {
                 'interviewer_question': None,
                 'candidate_response': None,
                 'ai_response': filtered_ai_response,
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now().isoformat(),
+                'model': model,
+                'provider': provider
             }
             self.conversation_history.append(exchange)
         
@@ -127,3 +135,49 @@ class PersistentContextManager:
         """Resets the conversation history."""
         self.conversation_history = []
         print("🔄 Conversation history reset")
+
+    def get_relevant_materials(self, query_text: str, max_paragraphs: int = 3) -> str:
+        """Locally search exam cheat sheet using layout/language-independent Jaccard overlap similarity"""
+        materials = self.persistent_context.get('exam_materials', '')
+        if not materials or not materials.strip():
+            return ""
+        
+        # Split into blocks by double newlines first
+        blocks = [b.strip() for b in materials.split('\n\n') if b.strip()]
+        # Fallback to single newlines if only one block but linebreaks exist
+        if len(blocks) <= 1 and '\n' in materials:
+            blocks = [b.strip() for b in materials.split('\n') if b.strip()]
+            
+        if not blocks:
+            return ""
+        
+        # Tokenize query
+        import re
+        def tokenize(text):
+            return set(re.findall(r'\w+', text.lower()))
+            
+        query_tokens = tokenize(query_text)
+        if not query_tokens:
+            return ""
+            
+        scored_blocks = []
+        for block in blocks:
+            block_tokens = tokenize(block)
+            if not block_tokens:
+                continue
+            # Calculate Jaccard Similarity
+            intersection = query_tokens.intersection(block_tokens)
+            if intersection:
+                union = query_tokens.union(block_tokens)
+                score = len(intersection) / len(union)
+                scored_blocks.append((score, block))
+                
+        if not scored_blocks:
+            return ""
+            
+        # Sort by relevance score
+        scored_blocks.sort(key=lambda x: x[0], reverse=True)
+        top_blocks = [block for score, block in scored_blocks[:max_paragraphs]]
+        
+        print(f"🔍 RAG: Found {len(top_blocks)} matching blocks in cheat sheet. Top score: {scored_blocks[0][0]:.3f}")
+        return "\n\n---\n\n".join(top_blocks)

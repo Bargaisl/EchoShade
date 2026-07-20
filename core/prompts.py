@@ -3,11 +3,12 @@
 
 from core.config import settings
 from typing import Dict, List, Optional
-
 from services.context_manager import PersistentContextManager
 
 def build_unlimited_candidate_profile(persistent_context: dict) -> str:
     """Build comprehensive candidate profile with UNLIMITED content."""
+    if not getattr(settings, 'PERSONALIZE_ANSWERS', True) or getattr(settings, 'MINIMAL_CONSUMPTION', False):
+        return ""
     profile_parts = []
     
     if persistent_context.get('candidate_name'):
@@ -23,11 +24,11 @@ def build_unlimited_candidate_profile(persistent_context: dict) -> str:
         focus_areas = ', '.join(persistent_context['focus_areas'])
         profile_parts.append(f"Interview Focus Areas: {focus_areas}")
     
-    # UNLIMITED: Complete resume content
+    # Complete resume content
     if persistent_context.get('complete_resume'):
         profile_parts.append(f"COMPLETE RESUME/BACKGROUND:\n{persistent_context['complete_resume']}")
     
-    # UNLIMITED: Complete job description
+    # Complete job description
     if persistent_context.get('complete_job_description'):
         profile_parts.append(f"COMPLETE JOB DESCRIPTION/REQUIREMENTS:\n{persistent_context['complete_job_description']}")
     
@@ -38,303 +39,71 @@ def get_interview_answer_prompt(question: str, context_manager: PersistentContex
     Generate AI prompt with guaranteed persistent context + recent conversation history.
     NO TOKEN LIMITS - includes complete resume and job description.
     """
-    
     complete_context = context_manager.get_complete_context()
     persistent_context = complete_context['persistent']
     conversation_history = complete_context['conversation_history']
     
     prompt_parts = []
+    is_minimal = getattr(settings, 'MINIMAL_CONSUMPTION', False)
     
-    # System role instructions
-    prompt_parts.append("""You are an expert interview coach providing real-time assistance during a live job interview.
-Your goal is to help the candidate give the best possible answer to the interviewer's question.
-
-COMPREHENSIVE TECHNICAL INTERVIEW GUIDELINES:
-
-FOR CODING/ALGORITHM QUESTIONS:
-- Start with brief problem understanding and clarification
-- Provide intuitive explanation of the approach first
-- Give at least 2 different solutions when applicable (brute force → optimized)
-- Write clean, working code in the EXACT programming language specified
-- Include time and space complexity analysis for each approach
-- Explain the thought process and why you chose each approach
-- Add comments in code for clarity
-- Mention edge cases and how to handle them
-
-FOR DATA STRUCTURES & ALGORITHMS (DSA):
-- Explain which data structure/algorithm fits best and why
-- Discuss trade-offs between different approaches
-- Provide complexity analysis (Big O notation)
-- Include implementation details and optimizations
-- Mention real-world applications where this would be useful
-
-FOR SYSTEM DESIGN QUESTIONS:
-- Start with requirements gathering and clarification
-- Design high-level architecture first, then dive into components
-- Discuss scalability, reliability, and performance considerations
-- Choose appropriate databases, caching strategies, load balancing
-- Address bottlenecks and how to handle them
-- Include technology stack recommendations with justifications
-- Discuss monitoring, logging, and deployment strategies
-
-FOR TECHNICAL Q&A/CONCEPTS:
-- Provide clear, precise definitions
-- Explain use cases and practical applications
-- Compare with alternatives (pros/cons)
-- Give real-world examples from your experience
-- Mention best practices and common pitfalls
-- Include relevant technologies and frameworks
-
-FOR API DESIGN QUESTIONS:
-- Follow RESTful principles and industry standards
-- Design proper URL structure and HTTP methods
-- Include request/response examples with JSON schemas
-- Discuss authentication, authorization, and security
-- Address versioning, rate limiting, and error handling
-- Consider scalability and performance optimizations
-
-FOR FRONTEND/BACKEND TECHNICAL QUESTIONS:
-- Mention specific frameworks, libraries, and tools
-- Discuss performance optimizations and best practices
-- Include code examples when relevant
-- Address cross-browser compatibility, responsive design (frontend)
-- Discuss security, databases, and architecture patterns (backend)
-
-GENERAL APPROACH:
-- Always be authentic and use real experiences from the candidate's background
-- Structure answers clearly with logical flow
-- Be concise but comprehensive - avoid unnecessary fluff
-- Show depth of knowledge while remaining practical
-- Demonstrate problem-solving thinking process""")
+    if is_minimal:
+        # Сверхкороткая инструкция для максимальной экономии токенов
+        prompt_parts.append("""Ты — ИИ-помощник для экзаменов и тестов.
+Отвечай строго на РУССКОМ языке.
+Давай максимально краткий и прямой ответ без лишних слов, вступлений и эмодзи.
+- Если перед тобой тест с вариантами ответов (тест) — выведи ТОЛЬКО правильный вариант (буква и текст) и пояснение в 1 предложение.
+- Если перед тобой практическая задача по программированию (написать функцию, алгоритм, класс, SQL-запрос) или исправление кода с багами — напиши ИСКЛЮЧИТЕЛЬНО готовый рабочий код в одном блоке ```. Убедись в 100% логической правильности алгоритма, корректно обработай все крайние случаи и тщательно продумай управление состоянием. Перед выводом кода сделай мысленную трассировку (dry run) каждой операции на тестовом примере, чтобы гарантировать абсолютную работоспособность кода без багов. Не пиши никаких текстовых инструкций, списков багов, описания ошибок или рассуждений вне блока кода. Только рабочий код. Ни одного слова за пределами блока кода!
+- Если математическая/числовая задача — покажи краткую формулу/код и ответ. Только суть.""")
+    else:
+        # Стандартная инструкция
+        prompt_parts.append("""Ты — ИИ-помощник для экзаменов и тестов.
+Отвечай ТОЛЬКО на РУССКОМ языке. Даже если вопрос на английском — отвечай по-русски.
+Ответы давай КОРОТКИЕ и по существу. Без лишней воды.
+- Если это тест с вариантами ответов — дай правильный ответ и пояснение в 1–2 предложения.
+- Если это практическая задача по программированию (написать код, функцию, алгоритм, SQL-запрос) или исправление кода с багами — напиши ПОЛНЫЙ РАБОЧИЙ ГОТОВЫЙ КОД в блоке разметки ```. Код должен быть абсолютно корректным, эффективным и обрабатывать все крайние случаи. Сделай мысленную пошаговую трассировку алгоритма на примере задачи, чтобы гарантировать отсутствие глупых логических багов (например, ошибок восстановления состояния или неверного порядка операций). Не пиши списки ошибок, разборы багов или текстовые пояснения, как устроен код. Допускается только сам код и, если требуется, краткая оценка сложности (Time/Space Complexity) одной строчкой.
+- Для числовых/математических задач давай формулу, расчёт и ответ.
+- Для терминов — чёткое определение и пример.
+- Не используй длинные шаблоны и эмодзи.
+- Будь полезным, быстрым и точным.""")
     
-    # PERSISTENT CANDIDATE CONTEXT - Always present, never removed
-    prompt_parts.append("=" * 100)
-    prompt_parts.append("🔒 PERSISTENT CANDIDATE CONTEXT (ALWAYS PRESENT - NEVER REMOVED):")
-    prompt_parts.append(build_unlimited_candidate_profile(persistent_context))
-    prompt_parts.append("=" * 100)
+    # Короткий контекст кандидата
+    profile = build_unlimited_candidate_profile(persistent_context)
+    if profile:
+        prompt_parts.append("=" * 40)
+        prompt_parts.append("🔒 КОНТЕКСТ КАНДИДАТА:")
+        prompt_parts.append(profile)
+        prompt_parts.append("=" * 40)
     
-    # Recent conversation history (limited to MAX_CONVERSATION_HISTORY exchanges)
-    if conversation_history:
-        prompt_parts.append(f"📝 RECENT CONVERSATION HISTORY (LAST {settings.MAX_CONVERSATION_HISTORY} EXCHANGES FOR CONTEXT):")
-        for i, exchange in enumerate(conversation_history, 1):
+    # История (если включена)
+    if conversation_history and settings.INCLUDE_CONVERSATION_HISTORY:
+        max_history = 2 if is_minimal else settings.MAX_CONVERSATION_HISTORY
+        prompt_parts.append(f"📝 ИСТОРИЯ (последние {max_history} обменов):")
+        for exchange in conversation_history[-max_history:]:
             if exchange.get('interviewer_question'):
-                prompt_parts.append(f"Exchange {i} - INTERVIEWER: {exchange['interviewer_question']}")
-            if exchange.get('candidate_response'):
-                prompt_parts.append(f"           ↳ CANDIDATE: {exchange['candidate_response']}")
+                prompt_parts.append(f"В: {exchange['interviewer_question']}")
             if exchange.get('ai_response'):
-                # Include full AI response for complete context
-                ai_response = exchange['ai_response']
-                prompt_parts.append(f"           ↳ AI ASSISTANT: {ai_response}")
-            prompt_parts.append("")
-        prompt_parts.append("=" * 100)
+                prompt_parts.append(f"О: {exchange['ai_response']}")
+        prompt_parts.append("=" * 40)
     
-    # Current question to answer
-    prompt_parts.append("🎯 CURRENT QUESTION TO ANSWER:")
+    # Текущий вопрос
+    prompt_parts.append("🎯 ВОПРОС:")
     prompt_parts.append(f'"{question}"')
     
-    # Enhanced Instructions with comprehensive markdown formatting
-    prompt_parts.append("""
-🎯 RESPONSE INSTRUCTIONS:
-- FOCUS ONLY ON THE CURRENT QUESTION ABOVE
-- Use the COMPLETE candidate background from the persistent context only if required (full resume and job description)
-- The conversation history is for context only - don't re-answer previous questions
-- Be authentic and specific using the candidate's REAL experience and projects
-- Write as if you ARE the candidate speaking directly to the interviewer
-
-📝 MANDATORY STRUCTURED MARKDOWN FORMATTING:
-- You MUST format your response using proper markdown structure. Choose the appropriate template based on question type:
-- IMPORTANT: Do not include ```markdown``` in your response anywhere as it breaks the formatting.
-═══════════════════════════════════════════════════════════════════════════════════════
-
-🔧 **FOR CODING/ALGORITHM/DSA QUESTIONS:**
-
-## 🎯 Problem Understanding
-- Clear restatement of what the problem is asking
-- Key requirements and constraints identified
-- Any clarifications or assumptions
-
-## 💡 Solution Strategy
-
-### 🚀 Approach 1: [Primary Method Name]
-- **Algorithm:** Brief description of the approach
-- **Time Complexity:** O(n) - with explanation
-- **Space Complexity:** O(1) - with explanation  
-- **Why this approach:** Key insight/reasoning
-
-```language
-// Clean, well-commented implementation
-// Include meaningful variable names
-// Handle edge cases appropriately
-```
-
-### ⚡ Approach 2: [Optimized/Alternative Method] (if applicable)
-- **Algorithm:** Different strategy description
-- **Time Complexity:** O(log n) - comparison with first approach
-- **Space Complexity:** O(1) - memory trade-offs
-- **Why this is better:** Optimization benefits
-
-```language
-// Optimized implementation
-// Focus on key improvements
-// Maintain readability
-```
-
-## 🔍 Implementation Details
-- **Edge Cases:** How the solution handles boundary conditions
-- **Testing Strategy:** Key test cases to verify correctness
-- **Trade-offs:** Why I chose this particular approach
-- **Real-world Context:** Where this algorithm pattern is useful
-
-═══════════════════════════════════════════════════════════════════════════════════════
-
-🏗️ **FOR SYSTEM DESIGN QUESTIONS:**
-
-## 📋 Requirements Analysis
-### Functional Requirements
-- Core features the system must support
-- User interactions and workflows
-
-### Non-Functional Requirements  
-- **Scale:** Expected users, requests/second, data volume
-- **Performance:** Latency and availability targets
-- **Reliability:** Fault tolerance and recovery needs
-
-## 🏛️ High-Level Architecture
-- System overview with main components
-- Data flow between components
-- External integrations
-
-## 🔧 Detailed Component Design
-
-### 💾 Database Design
-- **Primary Database:** Choice and justification
-- **Schema:** Key tables and relationships
-- **Scaling Strategy:** Sharding, replication, caching
-
-### 🌐 API Design
-- **Architecture Pattern:** REST/GraphQL/gRPC choice
-- **Key Endpoints:** Core API operations
-
-```json
-// Example API structure
-{
-  "endpoint": "/api/v1/resource",
-  "method": "POST",
-  "request": { "field": "example" },
-  "response": { "result": "success" }
-}
-```
-
-### 🛠️ Technology Stack
-- **Frontend:** [Technology] - Why chosen for this use case
-- **Backend:** [Technology] - Scalability and performance benefits  
-- **Database:** [Technology] - Data model fit and scaling characteristics
-- **Caching:** [Technology] - Specific caching strategy
-
-## 📈 Scalability & Performance
-- **Bottlenecks:** Identified constraints and solutions
-- **Monitoring:** Key metrics and alerting strategy
-- **Deployment:** Infrastructure and CI/CD considerations
-
-═══════════════════════════════════════════════════════════════════════════════════════
-
-🎯 **FOR BEHAVIORAL/EXPERIENCE QUESTIONS:**
-
-## 📖 [Main Topic/Situation Summary]
-
-### 🏢 Context & Background
-- **Setting:** Company/project context from my experience
-- **Role:** My specific position and responsibilities
-- **Challenge:** What made this situation significant
-
-### 📊 Situation-Action-Result Framework
-
-#### 🎯 **Situation**
-- Specific scenario and challenges faced
-- Stakes and complexity involved
-- Why this was important to address
-
-#### 🛠️ **Action** 
-- **What I did:** Specific steps I took personally
-- **How I approached it:** My methodology and reasoning
-- **Collaboration:** How I worked with others (if applicable)
-- **Tools/Technologies:** Specific implementations used
-
-#### 🏆 **Result**
-- **Quantifiable outcomes:** Metrics, improvements, success measures
-- **Impact:** How it benefited the team/company/project
-- **Recognition:** Any acknowledgment or follow-up results
-
-### 💡 Key Takeaways & Learning
-- **Lessons learned:** What this experience taught me
-- **Skills developed:** Technical and soft skills gained
-- **Application to this role:** How this experience applies to the position
-- **Future application:** How I'd apply these learnings
-
-═══════════════════════════════════════════════════════════════════════════════════════
-
-🔍 **FOR TECHNICAL CONCEPT/KNOWLEDGE QUESTIONS:**
-
-## 📚 Core Concept Definition
-- Clear, precise explanation of the concept
-- Key characteristics and properties
-
-## 🎯 Use Cases & Applications
-### Primary Use Cases
-- When and why you'd use this technology/concept
-- Specific scenarios where it excels
-
-### Real-World Examples
-- **From my experience:** Specific projects where I've used this
-- **Industry examples:** Common applications in production systems
-
-## ⚖️ Trade-offs & Alternatives
-### Advantages
-- Key benefits and strengths
-- Performance or scalability gains
-
-### Disadvantages  
-- Limitations and potential drawbacks
-- When NOT to use this approach
-
-### Alternatives Comparison
-- **Alternative 1:** [Technology] - When to choose over main concept
-- **Alternative 2:** [Technology] - Different trade-offs and use cases
-
-## 🛠️ Implementation Considerations
-- **Best practices:** How to implement effectively
-- **Common pitfalls:** Mistakes to avoid
-- **Integration:** How it fits with other technologies
-
-═══════════════════════════════════════════════════════════════════════════════════════
-
-💼 **FOR GENERAL/SIMPLE QUESTIONS:**
-
-## 🎯 Direct Answer
-[Clear, concise response to the question]
-
-### 📝 Key Points
-- **Point 1:** Most important aspect
-- **Point 2:** Supporting detail or example
-- **Point 3:** Additional context or benefit
-
-### 🔗 Relevant Experience
-Brief example from my background that demonstrates this knowledge or skill in action.
-
-═══════════════════════════════════════════════════════════════════════════════════════
-
-**CRITICAL FORMATTING RULES:**
-1. **Always use appropriate headers (##, ###)** for clear section separation
-2. **Use bullet points and sub-bullets** for easy scanning
-3. **Bold key terms** for emphasis and readability
-4. **Include code blocks** with proper language syntax highlighting
-5. **Use emojis** strategically for visual organization (🎯, 💡, 🔧, etc.)
-6. **Structure content hierarchically** with clear information flow
-7. **Make responses scannable** - interviewer should easily find key information
-
-ALWAYS choose the most appropriate template above and format your response accordingly.
-
-**COMPLETE STRUCTURED MARKDOWN ANSWER TO THE CURRENT QUESTION:**""")
+    if is_minimal:
+        prompt_parts.append("""
+📌 ДАЙ МАКСИМАЛЬНО КРАТКИЙ ОТВЕТ НА РУССКОМ.
+Если это тест — ТОЛЬКО выбранный вариант и пояснение в 1 предложение.
+Если это написание/исправление кода — выдай ИСКЛЮЧИТЕЛЬНО готовый рабочий код (внутри ```) без какого-либо текста, разбора ошибок, багов или пояснений до/после блока. Ни одного слова вне блока кода!
+БЕЗ ЭМОДЗИ.
+""")
+    else:
+        prompt_parts.append("""
+📌 ОТВЕТЬ КОРОТКО, ЧЁТКО, ТОЛЬКО ПО ДЕЛУ, НА РУССКОМ.
+Если вопрос с вариантами — дай правильный ответ и пояснение в 1–2 предложения.
+Если задача на программирование/исправление кода — напиши ИСКЛЮЧИТЕЛЬНО готовый рабочий код в блоке разметки ``` и краткую сложность (Time/Space Complexity) одной строчкой под ним. Без разбора ошибок и пояснений, как исправить баги.
+Не пиши длинные вступления, не используй эмодзи и сложное форматирование.
+Только суть.
+""")
     
     return "\n".join(prompt_parts)
 
@@ -343,66 +112,40 @@ def get_quick_response_prompt(question: str, context_manager: PersistentContextM
     Generates a quick, simple prompt for basic questions with essential context.
     Uses the persistent context manager to access full candidate data.
     """
-    if not context_manager or not context_manager.ensure_context_available():
-        return f"""Interview question: "{question}"
-
-📝 FORMATTING REQUIREMENT:
-Format your response in clear markdown structure:
-
-## 🎯 [Brief Topic Summary]
-[Your main answer here]
-
-### 💡 Key Points
-- Important detail 1
-- Important detail 2
-- Supporting context
-
-Give a brief, professional answer.
-
-**STRUCTURED ANSWER:**"""
+    complete_context = context_manager.get_complete_context()
+    persistent_context = complete_context['persistent']
     
-    persistent_context = context_manager.get_complete_context()['persistent']
+    prompt_parts = []
+    is_minimal = getattr(settings, 'MINIMAL_CONSUMPTION', False)
     
-    # Build basic profile from persistent context
-    profile_parts = []
-    name = persistent_context.get('candidate_name', '')
-    role = persistent_context.get('target_role', '')
-    company = persistent_context.get('target_company', '')
-    resume = persistent_context.get('complete_resume', '')
-
-    if name and role and company:
-        profile_parts.append(f"You are {name}, applying for {role} at {company}.")
+    if is_minimal:
+        prompt_parts.append("""Ты — ИИ-помощник для экзаменов и тестов.
+Отвечай строго на РУССКОМ языке.
+Давай максимально краткий и прямой ответ без лишних слов, вступлений и эмодзи.
+Если это вопрос с вариантами ответов (тест) — выведи ТОЛЬКО правильный вариант (буква и текст) и пояснение в 1 предложение.
+Если задача — покажи только краткую формулу/код и ответ. Только суть.""")
+    else:
+        prompt_parts.append("""Ты — ИИ-помощник для экзаменов и тестов.
+Отвечай ТОЛЬКО на РУССКОМ языке. Даже если вопрос на английском — отвечай по-русски.
+Ответы давай КОРОТКИЕ и по существу. Без лишней воды.
+Для числовых/математических задач давай формулу, расчёт и ответ.
+Для терминов — чёткое определение и пример.
+Не используй длинные шаблоны и эмодзи.
+Будь полезным, быстрым и точным.""")
+        
+    profile = build_unlimited_candidate_profile(persistent_context)
+    if profile:
+        prompt_parts.append("=" * 40)
+        prompt_parts.append("🔒 КОНТЕКСТ КАНДИДАТА:")
+        prompt_parts.append(profile)
+        prompt_parts.append("=" * 40)
+        
+    prompt_parts.append("🎯 ВОПРОС:")
+    prompt_parts.append(f'"{question}"')
     
-    # Include key resume highlights (a snippet for quick reference)
-    if resume:
-        resume_preview = resume[:1200] + "..." if len(resume) > 1200 else resume
-        profile_parts.append(f"Key background highlights: {resume_preview}")
-    
-    profile_context = "\n".join(profile_parts) if profile_parts else ""
-    
-    return f"""🎯 CURRENT INTERVIEW QUESTION TO ANSWER:
-"{question}"
-
-CANDIDATE PROFILE:
-{profile_context}
-
-🎯 INSTRUCTIONS:
-Give a professional, brief answer to the CURRENT QUESTION above. Draw from your actual background and projects. Be specific and authentic.
-
-📝 MANDATORY FORMATTING REQUIREMENT:
-Format your response using clear markdown structure for easy reading:
-
-## 🎯 [Brief Answer Summary]
-[Your main response to the question]
-
-### 💡 Key Details
-- **Important Point 1:** Brief explanation
-- **Important Point 2:** Supporting detail  
-- **Relevant Experience:** Quick example from your background
-
-### 🔗 Why This Matters
-Brief connection to the role or how this demonstrates your fit.
-
-**STRUCTURED BRIEF ANSWER:**"""
-
-# Removed manual question categorization - AI now handles this intelligently
+    if is_minimal:
+        prompt_parts.append("📌 ДАЙ МАКСИМАЛЬНО КРАТКИЙ ОТВЕТ НА РУССКОМ. ТОЛЬКО СУТЬ. БЕЗ ЭМОДЗИ.")
+    else:
+        prompt_parts.append("📌 ОТВЕТЬ КОРОТКО, ЧЁТКО, ТОЛЬКО ПО ДЕЛУ, НА РУССКОМ.")
+        
+    return "\n".join(prompt_parts)

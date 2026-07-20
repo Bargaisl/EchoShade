@@ -19,28 +19,45 @@ class InterviewSession:
     """
     def __init__(self, session_id: str):
         self.session_id: str = session_id
-        self.websocket: Optional[WebSocket] = None
+        self.websockets: list[WebSocket] = []
         self.llm_manager: Optional[MultiLLMManager] = None
         self.stt_manager: Optional[DeepgramManager] = None
         self.is_active: bool = False
         self.state: Dict[str, any] = {
-            "is_muted": False,
+            "is_muted": True,  # Default microphone is muted on start
             "process_all_speakers": True,
-            "is_universally_muted": False
+            "is_universally_muted": False,
+            "screenshot_queue_count": 0,
+            "vision_mode_active": False
         }
         self.transcript_buffer: str = ""
         self.silence_timer: Optional[asyncio.Task] = None
         self.last_activity_time: float = time.time()
+        self.last_request_type: Optional[str] = None
+        self.last_request_payload: Optional[dict] = None
 
     def _touch(self):
         """Update last activity time."""
         self.last_activity_time = time.time()
 
+    def add_websocket(self, websocket: WebSocket):
+        """Register a new websocket connection to this session."""
+        if websocket not in self.websockets:
+            self.websockets.append(websocket)
+            print(f"🔌 WebSocket added to session {self.session_id}. Total: {len(self.websockets)}")
+
+    def remove_websocket(self, websocket: WebSocket):
+        """Unregister a websocket connection from this session."""
+        if websocket in self.websockets:
+            self.websockets.remove(websocket)
+            print(f"🔌 WebSocket removed from session {self.session_id}. Remaining: {len(self.websockets)}")
+
     async def _send_json(self, type: str, payload: dict):
-        """Safely sends a JSON message to the client's websocket."""
-        if self.websocket:
+        """Safely sends a JSON message to all connected websockets."""
+        if self.websockets:
             self._touch()
-            await send_json(self.websocket, type, payload)
+            tasks = [send_json(ws, type, payload) for ws in self.websockets]
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     async def handle_verify_deepgram(self, payload: dict):
         """Handles the deepgram verification request from the client."""
@@ -96,7 +113,52 @@ class InterviewSession:
             self.state["process_all_speakers"] = payload['processAllSpeakers']
         if 'isUniversallyMuted' in payload:
             self.state["is_universally_muted"] = payload['isUniversallyMuted']
+        if 'isMuted' in payload:
+            self.state["is_muted"] = payload['isMuted']
         await self._send_json("config_updated", self.state)
+        await self._send_json("state_updated", self.state)
+
+    async def handle_phone_toggle_vision_mode(self, payload: dict):
+        self._touch()
+        print(f"📱 Phone remote request: toggle_vision_mode")
+        await self._send_json("toggle_vision_mode", {})
+
+    async def handle_phone_capture_screenshot(self, payload: dict):
+        self._touch()
+        print(f"📱 Phone remote request: capture_screenshot")
+        await self._send_json("capture_screenshot", {})
+
+    async def handle_phone_process_screenshots(self, payload: dict):
+        self._touch()
+        print(f"📱 Phone remote request: process_screenshots")
+        await self._send_json("process_screenshots", {})
+
+    async def handle_phone_reset_screenshot_queue(self, payload: dict):
+        self._touch()
+        print(f"📱 Phone remote request: reset_screenshot_queue")
+        await self._send_json("reset_screenshot_queue", {})
+
+    async def handle_phone_toggle_mic_mute(self, payload: dict):
+        self._touch()
+        print(f"📱 Phone remote request: toggle_mic_mute")
+        await self._send_json("toggle_mic_mute", {})
+
+    async def handle_phone_toggle_universal_mute(self, payload: dict):
+        self._touch()
+        print(f"📱 Phone remote request: toggle_universal_mute")
+        await self._send_json("toggle_universal_mute", {})
+
+    async def handle_screenshot_queue_update(self, payload: dict):
+        self._touch()
+        count = payload.get('count', 0)
+        self.state["screenshot_queue_count"] = count
+        await self._send_json("state_updated", self.state)
+
+    async def handle_vision_mode_update(self, payload: dict):
+        self._touch()
+        is_active = payload.get('isActive', False)
+        self.state["vision_mode_active"] = is_active
+        await self._send_json("state_updated", self.state)
 
     async def handle_switch_preset(self, payload: dict):
         """Handles preset switching."""
@@ -115,6 +177,8 @@ class InterviewSession:
     async def handle_vision_analysis(self, payload: dict):
         """Handles vision analysis requests."""
         self._touch()
+        self.last_request_type = "vision"
+        self.last_request_payload = payload
         try:
             print(f"🔍 Session {self.session_id}: Processing vision analysis request...")
             
@@ -140,24 +204,108 @@ class InterviewSession:
             provider_name = vision_config['provider']
             model_name = vision_config['model']
             
-            print(f"🧠 Analyzing {len(screenshots)} screenshots with {provider_name}-{model_name}")
+            # --- Two-step pipeline: OCR/Extraction -> Text LLM ---
+            # Step 1: Use Vision AI to extract text/questions from screenshots
+            print(f"👁️ Step 1: Extracting text/code from {len(screenshots)} screenshots using {provider_name}-{model_name}")
             
-            analysis, result_info = await vision_service.analyze_coding_problem(
+            extraction_prompt = "Извлеки весь текст, вопросы теста, варианты ответов и код со скриншотов. Верни только распознанный текст без твоих ответов и без комментариев."
+            
+            ocr_text, ocr_result_info = await vision_service.analyze_coding_problem_ocr(
                 provider_name=provider_name,
                 model_name=model_name,
                 screenshots=screenshots,
-                languages=languages
+                prompt=extraction_prompt
             )
             
-            await self._send_json("vision_analysis_result", {
-                "success": result_info.get("success", True),
-                "analysis": analysis,
-                "provider": provider_name,
-                "model": model_name,
-                "screenshot_count": len(screenshots),
-                "languages": languages,
-                **result_info
-            })
+            # Check if OCR step succeeded (default False so errors are always caught)
+            ocr_succeeded = ocr_result_info.get("success", False)
+            
+            if not ocr_succeeded:
+                # Vision OCR failed (e.g. no network / connection error)
+                error_detail = ocr_result_info.get("error", "unknown")
+                print(f"⚠️ OCR step failed ({error_detail}). Attempting LLM-only fallback...")
+                
+                if self.llm_manager:
+                    # Fallback: ask LLM to answer based on prompt alone (no screenshots)
+                    current_preset = self.llm_manager.get_current_preset_info()
+                    text_provider = current_preset.get("provider", "Unknown")
+                    text_model = current_preset.get("model", "Unknown")
+                    
+                    fallback_prompt = (
+                        f"Система распознавания изображений временно недоступна (ошибка сети). "
+                        f"Пожалуйста, ответь на вопрос или задачу на основе контекста из промпта:\n\n{prompt}"
+                    )
+                    answer, solve_result_info = await self.llm_manager.get_ai_answer(fallback_prompt, stream_callback=None)
+                    
+                    if solve_result_info.get("success"):
+                        await self._send_json("vision_analysis_result", {
+                            "success": True,
+                            "analysis": f"⚠️ *Распознавание скриншота недоступно (Vision API недоступен). Ответ на основе промпта:*\n\n{answer}",
+                            "provider": text_provider,
+                            "model": text_model,
+                            "screenshot_count": len(screenshots),
+                            "languages": languages,
+                            "ocr_skipped": True,
+                        })
+                    else:
+                        await self._send_json("vision_analysis_result", {
+                            "success": False,
+                            "error": f"Сеть недоступна: Vision API и LLM API недоступны. Проверьте VPN/сеть."
+                        })
+                else:
+                    await self._send_json("vision_analysis_result", {
+                        "success": False,
+                        "error": "Сеть недоступна: Vision API недоступен. Проверьте VPN/сеть."
+                    })
+                print(f"✅ Session {self.session_id}: Vision analysis (fallback) completed")
+                return
+                
+            # Step 2: Use the active text model (e.g. qwen-3-235b-thinking) to solve the extracted problem
+            if self.llm_manager:
+                current_preset = self.llm_manager.get_current_preset_info()
+                text_provider = current_preset.get("provider", "Unknown")
+                text_model = current_preset.get("model", "Unknown")
+                print(f"🧠 Step 2: Solving extracted question using text model {text_provider}-{text_model}")
+                
+                # Search for relevant materials from local cheat sheet (RAG)
+                rag_context = ""
+                if self.llm_manager.shared_context:
+                    rag_context = self.llm_manager.shared_context.get_relevant_materials(ocr_text)
+                
+                # Build prompt for solving
+                solve_prompt = f"Ниже приведён текст, извлечённый из скриншота теста/задачи. Реши этот тест или задачу.\n\n[Текст со скриншота]:\n{ocr_text}"
+                if rag_context:
+                    solve_prompt += f"\n\n[СПРАВОЧНЫЕ МАТЕРИАЛЫ ИЗ ШПАРГАЛКИ (используй для решения, если применимо)]:\n{rag_context}"
+                
+                answer, solve_result_info = await self.llm_manager.get_ai_answer(solve_prompt, stream_callback=None)
+                
+                await self._send_json("vision_analysis_result", {
+                    "success": True,
+                    "analysis": answer,
+                    "provider": text_provider,
+                    "model": text_model,
+                    "screenshot_count": len(screenshots),
+                    "languages": languages,
+                    **solve_result_info
+                })
+            else:
+                # Fallback to single-step if text manager is not initialized
+                print("⚠️ Fallback to single-step vision analysis as LLM Manager is missing")
+                analysis, result_info = await vision_service.analyze_coding_problem(
+                    provider_name=provider_name,
+                    model_name=model_name,
+                    screenshots=screenshots,
+                    languages=languages
+                )
+                await self._send_json("vision_analysis_result", {
+                    "success": result_info.get("success", True),
+                    "analysis": analysis,
+                    "provider": provider_name,
+                    "model": model_name,
+                    "screenshot_count": len(screenshots),
+                    "languages": languages,
+                    **result_info
+                })
             
             print(f"✅ Session {self.session_id}: Vision analysis completed successfully")
             
@@ -171,6 +319,7 @@ class InterviewSession:
     async def handle_end_interview(self, payload: dict):
         """Handles the end of an interview."""
         print(f"🛑 Session {self.session_id}: Ending interview.")
+        await self._send_json("interview_ended", {})
         await self.cleanup()
         session_manager.remove_session(self.session_id)
 
@@ -187,6 +336,41 @@ class InterviewSession:
 
         await self._send_json("session_reset_complete", {"status": "ok"})
         print(f"✅ Session {self.session_id}: Context has been reset.")
+
+    async def handle_regenerate_response(self, payload: dict):
+        """Handles response regeneration requests."""
+        self._touch()
+        if not self.last_request_type or not self.last_request_payload:
+            print("⚠️ No previous request to regenerate")
+            await self._send_json("error", {"message": "Нет предыдущего ответа для регенерации."})
+            return
+            
+        print(f"🔄 Session {self.session_id}: Regenerating last response ({self.last_request_type})...")
+        
+        # Remove the last exchange from conversation history since we are regenerating it
+        if self.llm_manager and self.llm_manager.shared_context:
+            history = self.llm_manager.shared_context.conversation_history
+            if history:
+                history.pop()
+                print("🧹 Removed last exchange from conversation history for regeneration")
+        
+        if self.last_request_type == "vision":
+            # For vision, re-run vision analysis with the exact same payload
+            await self.handle_vision_analysis(self.last_request_payload)
+        elif self.last_request_type == "text":
+            # For text, re-run with the exact same question
+            question = self.last_request_payload.get("question")
+            if question:
+                try:
+                    await self._send_json("ai_processing_started", {"question": question})
+                    async def stream_callback(chunk: str, chunk_type: str):
+                        return await self._send_json("ai_answer_chunk", {"chunk": chunk, "chunk_type": chunk_type})
+                    answer, result_info = await self.llm_manager.get_ai_answer(question, stream_callback)
+                    await self._send_json("ai_answer_complete", {"answer": answer, **result_info})
+                    print(f"🤖 AI STREAMING COMPLETE (REGENERATED) for session {self.session_id}")
+                except Exception as e:
+                    print(f"❌ CRITICAL: Error regenerating transcript: {e}")
+                    await self._send_json("error", {"message": "Ошибка регенерации ответа."})
 
     async def initialize_managers(self, primary_provider_config, secondary_provider_config, primary_vision_config, secondary_vision_config, onboarding_context):
         """Initializes all necessary managers for the session."""
@@ -222,10 +406,12 @@ class InterviewSession:
         self.transcript_buffer = ""
         
         print(f"✅ Silence detected. Processing transcript for session {self.session_id}: {transcript}")
-        if not self.llm_manager or not self.websocket:
+        if not self.llm_manager or not self.websockets:
             return
 
         try:
+            self.last_request_type = "text"
+            self.last_request_payload = {"question": transcript}
             await self._send_json("ai_processing_started", {"question": transcript})
 
             async def stream_callback(chunk: str, chunk_type: str):
@@ -328,7 +514,7 @@ class SessionManager:
         stale_ids = []
         
         for sid, session in self.active_sessions.items():
-            if session.websocket is None:
+            if not session.websockets:
                 idle_time = now - session.last_activity_time
                 if idle_time > SESSION_TTL_SECONDS:
                     stale_ids.append(sid)

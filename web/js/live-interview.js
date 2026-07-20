@@ -494,6 +494,46 @@ class LiveInterviewUI {
         this.updateEmptyState();
     }
 
+    // Add message instantly (without typing animation, useful for history recovery)
+    addMessageInstant(content, type, metadata = {}) {
+        // Filter thinking content from all messages
+        const filteredContent = this.filterThinkingContent(content);
+        
+        let messageElement;
+        if (type === 'vision-analysis') {
+            messageElement = this.createVisionAnalysisElement(filteredContent, metadata);
+            const contentDiv = messageElement.querySelector('.streaming-text');
+            if (this.streaming.config.enableMarkdown) {
+                this.streaming.displayInstantMarkdown(contentDiv, filteredContent);
+            } else {
+                this.streaming.displayInstantText(contentDiv, filteredContent);
+            }
+        } else {
+            messageElement = this.createMessageElement(filteredContent, type);
+            const contentDiv = messageElement.querySelector('.streaming-text');
+            if (type === 'ai-response') {
+                if (this.streaming.config.enableMarkdown) {
+                    this.streaming.displayInstantMarkdown(contentDiv, filteredContent);
+                } else {
+                    this.streaming.displayInstantText(contentDiv, filteredContent);
+                }
+            } else {
+                // For candidate and interviewer speech
+                this.streaming.displayInstantText(contentDiv, filteredContent);
+            }
+        }
+        
+        messageElement.classList.add('complete');
+        this.conversationStream.appendChild(messageElement);
+        
+        // Add response metadata if it's an AI response or vision analysis
+        if ((type === 'ai-response' || type === 'vision-analysis') && Object.keys(metadata).length > 0) {
+            this.addResponseMetadata(messageElement, metadata);
+        }
+        
+        this.updateEmptyState();
+    }
+
     // Create message element
     createMessageElement(content, type) {
         const messageDiv = document.createElement('div');
@@ -1012,7 +1052,12 @@ class LiveInterviewUI {
             return;
         }
         if (this.conversationStream) {
-            this.conversationStream.scrollTop = this.conversationStream.scrollHeight;
+            // Use rAF to batch scroll with the browser's render cycle — eliminates layout-thrashing jank
+            requestAnimationFrame(() => {
+                if (this.conversationStream) {
+                    this.conversationStream.scrollTop = this.conversationStream.scrollHeight;
+                }
+            });
         }
     }
 
@@ -1081,18 +1126,38 @@ class LiveInterviewUI {
         // The markdown parser will handle the thinking content filtering at the buffer level
         const renderedHTML = this.markdownParser.processChunk(chunk);
         
-        // Update content with rendered HTML
-        this.currentStreamingContent.innerHTML = renderedHTML;
-        
-        // Auto-scroll if user is near bottom
-        if (this.isUserNearBottom()) {
-            this.scrollToBottom();
+        // Batch DOM write with rAF — avoids forced layout/style recalc on every chunk
+        if (this._pendingChunkRaf) {
+            cancelAnimationFrame(this._pendingChunkRaf);
         }
+        this._pendingRenderedHTML = renderedHTML;
+        this._pendingChunkRaf = requestAnimationFrame(() => {
+            if (this.currentStreamingContent && this._pendingRenderedHTML !== undefined) {
+                this.currentStreamingContent.innerHTML = this._pendingRenderedHTML;
+                this._pendingRenderedHTML = undefined;
+            }
+            this._pendingChunkRaf = null;
+            // Auto-scroll if user is near bottom
+            if (this.isUserNearBottom()) {
+                this.scrollToBottom();
+            }
+        });
+
     }
 
     // Finalize streaming response
     finalizeStreamingResponse(metadata = {}) {
         console.log('✅ Finalizing real-time streaming...');
+        
+        // Flush any pending rAF chunk immediately — ensures last chunk is rendered
+        if (this._pendingChunkRaf) {
+            cancelAnimationFrame(this._pendingChunkRaf);
+            this._pendingChunkRaf = null;
+            if (this.currentStreamingContent && this._pendingRenderedHTML !== undefined) {
+                this.currentStreamingContent.innerHTML = this._pendingRenderedHTML;
+                this._pendingRenderedHTML = undefined;
+            }
+        }
         
         if (this.currentStreamingElement) {
             // Mark as complete (this will re-enable text selection via CSS)
@@ -1217,6 +1282,26 @@ class LiveInterviewUI {
         }
         
         return filteredContent;
+    }
+
+    // Remove last AI response message
+    removeLastMessage() {
+        if (this.currentStreamingElement) {
+            this.currentStreamingElement.remove();
+            this.currentStreamingElement = null;
+            this.currentStreamingContent = null;
+            this.isStreaming = false;
+        }
+        
+        if (this.conversationStream) {
+            const messages = this.conversationStream.querySelectorAll('.message.ai-response');
+            if (messages.length > 0) {
+                const lastMessage = messages[messages.length - 1];
+                lastMessage.remove();
+                console.log('🧹 Removed last AI response element from stream');
+                this.updateEmptyState();
+            }
+        }
     }
 
     // Clear conversation

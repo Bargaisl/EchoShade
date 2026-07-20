@@ -89,6 +89,21 @@ function setupTabs() {
 function switchView(targetView) {
     Object.values(views).forEach(view => view.classList.remove('active'));
     views[targetView].classList.add('active');
+    
+    if (targetView === 'live') {
+        const isMobile = document.body.classList.contains('mobile-client');
+        const remoteControls = document.getElementById('mobile-remote-controls');
+        const statusPill = document.getElementById('mobile-status-pill');
+        if (remoteControls) {
+            if (isMobile) {
+                remoteControls.classList.remove('hidden');
+                if (statusPill) statusPill.style.display = 'flex';
+            } else {
+                remoteControls.classList.add('hidden');
+                if (statusPill) statusPill.style.display = 'none';
+            }
+        }
+    }
 }
 
 function handleOnboarding() {
@@ -273,10 +288,78 @@ function setupEventListeners() {
     secondaryProviderSelect?.addEventListener('change', providerManager.updateSecondaryModelDropdown.bind(providerManager));
     visionProviderSelect?.addEventListener('change', providerManager.updateVisionModelDropdown.bind(providerManager));
     visionSecondaryProviderSelect?.addEventListener('change', providerManager.updateSecondaryVisionModelDropdown.bind(providerManager));
+
+    // Mobile remote controls event listeners
+    document.getElementById('remote-btn-toggle-vision')?.addEventListener('click', () => {
+        if (typeof window.sendSocketMessage === 'function') {
+            window.sendSocketMessage('phone_toggle_vision_mode', {});
+        }
+    });
+    
+    document.getElementById('remote-btn-capture')?.addEventListener('click', () => {
+        if (typeof window.sendSocketMessage === 'function') {
+            window.sendSocketMessage('phone_capture_screenshot', {});
+        }
+    });
+    
+    document.getElementById('remote-btn-process')?.addEventListener('click', () => {
+        if (typeof window.sendSocketMessage === 'function') {
+            window.sendSocketMessage('phone_process_screenshots', {});
+        }
+    });
+    
+    document.getElementById('remote-btn-clear')?.addEventListener('click', () => {
+        if (typeof window.sendSocketMessage === 'function') {
+            window.sendSocketMessage('phone_reset_screenshot_queue', {});
+        }
+    });
+    
+    document.getElementById('remote-btn-regenerate')?.addEventListener('click', () => {
+        if (typeof window.sendSocketMessage === 'function') {
+            liveInterviewUI.removeLastMessage();
+            window.sendSocketMessage('regenerate_response', {});
+        }
+    });
+
+    // Pill interactive event listeners
+    document.getElementById('pill-vision')?.addEventListener('click', () => {
+        if (typeof window.sendSocketMessage === 'function') {
+            window.sendSocketMessage('phone_toggle_vision_mode', {});
+        }
+    });
+    
+    document.getElementById('pill-queue')?.addEventListener('click', () => {
+        if (typeof window.sendSocketMessage === 'function') {
+            window.sendSocketMessage('phone_process_screenshots', {});
+        }
+    });
+    
+    document.getElementById('pill-mic')?.addEventListener('click', () => {
+        if (typeof window.sendSocketMessage === 'function') {
+            window.sendSocketMessage('phone_toggle_mic_mute', {});
+        }
+    });
+    
+    document.getElementById('pill-universal')?.addEventListener('click', () => {
+        if (typeof window.sendSocketMessage === 'function') {
+            window.sendSocketMessage('phone_toggle_universal_mute', {});
+        }
+    });
 }
 
 // Main initialization
+// Main initialization
 window.addEventListener('DOMContentLoaded', async () => {
+    // Detect environment and set client class using User Agent matching
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+        document.body.classList.add('mobile-client');
+        console.log("📱 Running in mobile client mode");
+    } else {
+        document.body.classList.add('desktop-client');
+        console.log("🖥️ Running in desktop client mode");
+    }
+
     await loadConfig();
     applyConsoleGate(); // Suppress console.log/debug/info when DEV_MODE is off
     await providerManager.loadAiProviders();
@@ -286,7 +369,31 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupPresetHotkeys();
     setupTabs();
     hotkeyManager.setEnabled(false);
-    switchView('onboarding');
+    switchView(isMobile ? 'live' : 'onboarding');
+    
+    // Register switchView globally
+    window.switchView = switchView;
+
+    // Expose toggle mute helpers globally for remote client commands
+    window.toggleMicMute = () => {
+        import('./mute-manager.js').then(m => {
+            m.default.toggleMicrophoneMute();
+        });
+    };
+    window.toggleUniversalMute = () => {
+        import('./mute-manager.js').then(m => {
+            m.default.toggleUniversalMute();
+        });
+    };
+
+    // Connect to WebSocket automatically to check for active sessions
+    try {
+        console.log("🔌 Attempting automatic background connection...");
+        await webSocketHandler.connect();
+        console.log("🔌 Background connection established successfully.");
+    } catch (e) {
+        console.warn("🔌 Background connection failed (backend might not be running yet):", e);
+    }
 });
 
 // --- Developer Shortcuts ---
@@ -297,7 +404,7 @@ function setupDeveloperShortcuts() {
     // Console helper functions
     if (isDev) {
         console.log(`
-🧪 === AURA DEVELOPER TOOLS ===
+🧪 === ECHOSHADE DEVELOPER TOOLS ===
 Available testing functions:
 • testSampleMarkdown() - Test with sample markdown content  
 • testStreamingMarkdown() - Test with comprehensive scenarios
@@ -371,7 +478,7 @@ function setupPresetHotkeys() {
                         captureScreenshot();
                         devLog('📸 Hotkey: Capturing screenshot');
                         break;
-                    case 'p':
+                    case 'a':
                         e.preventDefault();
                         processScreenshots();
                         devLog('🔄 Hotkey: Processing screenshots');
@@ -396,6 +503,7 @@ window.toggleMicMute = toggleMicMute;
 window.toggleUniversalMute = toggleUniversalMute;
 window.endInterview = endInterview;
 window.resetInterview = resetInterview;
+window.regenerateResponse = () => webSocketHandler.regenerateResponse();
 window.getScreenVideoTrack = getScreenVideoTrack;
 window.isScreenSharingAvailable = isScreenSharingAvailable;
 window.testStreamingMarkdown = testStreamingMarkdown;

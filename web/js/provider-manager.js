@@ -128,7 +128,7 @@ export class ProviderManager {
 
                 setTimeout(() => {
                     if (this.onboardingForm.secondaryModelSelect && !this.onboardingForm.secondaryModelSelect.disabled) {
-                        const defaultModel = secondaryProvider.defaultModel || secondaryProvider.models[0];
+                        const defaultModel = secondaryProvider.defaultSecondaryModel || secondaryProvider.defaultModel || secondaryProvider.models[0];
                         if (defaultModel) {
                             // Handle both string and object models for default selection
                             const modelName = this._getModelName(defaultModel);
@@ -168,7 +168,7 @@ export class ProviderManager {
 
                 setTimeout(() => {
                     if (this.onboardingForm.visionSecondaryModelSelect && !this.onboardingForm.visionSecondaryModelSelect.disabled) {
-                        const defaultModel = secondaryVisionProvider.defaultVisionModel || secondaryVisionProvider.visionModels[0];
+                        const defaultModel = secondaryVisionProvider.defaultVisionSecondaryModel || secondaryVisionProvider.defaultVisionModel || secondaryVisionProvider.visionModels[0];
                         if (defaultModel) {
                             // Handle both string and object models for default selection
                             const modelName = this._getModelName(defaultModel);

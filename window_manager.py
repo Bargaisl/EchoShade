@@ -2,7 +2,7 @@
 # This module contains the core logic for managing the application's desktop window.
 # Its primary responsibility is to apply the necessary settings to prevent the window
 # from being captured by screen recording or sharing software (e.g., Teams, Zoom, OBS).
-# This is the "stealth" feature of the Aura application.
+# This is the "stealth" feature of the EchoShade application.
 
 import os
 import ctypes
@@ -525,21 +525,26 @@ class WindowManager:
         return hidden_count
 
     def start_screen_share_monitor(self):
-        """Start monitoring for screen sharing indicators and auto-hide them"""
+        """Start monitoring for screen sharing indicators and auto-hide them.
+        
+        NOTE: WDA_EXCLUDEFROMCAPTURE already handles capture protection at the OS level.
+        This monitor only hides visible indicator banners (e.g. "You're sharing your screen").
+        Interval is intentionally long (30s) to avoid wasting CPU on low-end hardware.
+        """
         if not self.is_windows or self.screen_share_monitor_active:
             return
         
-        print("🔍 Starting screen sharing indicator monitor...")
+        print("🔍 Starting screen sharing indicator monitor (30s interval)...")
         self.screen_share_monitor_active = True
         
         def monitor_thread():
             while self.screen_share_monitor_active:
                 try:
                     self.hide_all_screen_share_indicators()
-                    time.sleep(1.0)  # Check every second
+                    time.sleep(30.0)  # Check every 30 seconds — was 1s, reduced 30x CPU cost
                 except Exception as e:
                     print(f"❌ Error in screen share monitor: {e}")
-                    time.sleep(2.0)  # Wait longer on error
+                    time.sleep(60.0)  # Wait longer on error
         
         monitor = Thread(target=monitor_thread, daemon=True)
         monitor.start()
@@ -826,7 +831,7 @@ class WindowManager:
             return False
 
         def on_process_screenshots():
-            """Process screenshots with AI (Alt+P)"""
+            """Process screenshots with AI (Alt+A)"""
             self.send_vision_command("process_screenshots")
             return False
 
@@ -927,67 +932,112 @@ class WindowManager:
                 print("🔽 Starting continuous scroll down")
             return False
 
-        # Create a separate listener for key releases to stop scrolling
-        def start_release_listener():
-            """Background thread to handle key releases for stopping continuous scroll"""
-            import threading
-            
-            def on_key_release(key):
-                try:
-                    if key == keyboard.Key.up and self.scrolling_up:
-                        self.scrolling_up = False
-                        print("🛑 Stopped continuous scroll up")
-                    elif key == keyboard.Key.down and self.scrolling_down:
-                        self.scrolling_down = False
-                        print("🛑 Stopped continuous scroll down")
-                except:
-                    pass
-
-            def on_key_press(key):
-                # We don't need to handle press here since GlobalHotKeys handles it
-                pass
-
-            release_listener = keyboard.Listener(
-                on_press=on_key_press,
-                on_release=on_key_release,
-                suppress=False
-            )
-            release_listener.start()
-            release_listener.join()
-
-        # Start the release listener in background
-        release_thread = Thread(target=start_release_listener, daemon=True)
-        release_thread.start()
-
-        # Regular hotkeys using the proven GlobalHotKeys approach
-        hotkey_map = {
-            '<alt>+x': on_toggle_ghost,
-            '<alt>+z': on_hide_show,
-            '<alt>+v': on_toggle_vision_mode,  # Toggle vision mode
-            '<alt>+s': on_capture_screenshot,  # Capture screenshot (replaces screen share hide)
-            '<alt>+p': on_process_screenshots, # Process screenshots
-            '<alt>+r': on_reset_screenshot_queue, # Reset screenshot queue
-            '<alt>+q': on_switch_primary,      # Switch to primary preset
-            '<alt>+w': on_switch_secondary,    # Switch to secondary preset
-            '<alt>+e': on_auto_select,         # Auto-select best AI preset
-            '<alt>+t': on_switch_vision_model,   # Switch vision model
-            '<alt>+m': on_toggle_mic_mute,     # Toggle microphone mute
-            '<alt>+u': on_toggle_universal_mute, # Toggle universal mute (pause)
-            '<alt>+1': on_transparency_transparent,  # 40% opacity (transparent)
-            '<alt>+2': on_transparency_semi,         # 70% opacity (semi-transparent)
-            '<alt>+3': on_transparency_opaque,       # 100% opacity (opaque)
-            '<alt>+<shift>+s': on_enable_proctoring_stealth,  # Enable proctoring stealth mode
-            '<alt>+<left>': on_move_left,      # Move window left
-            '<alt>+<right>': on_move_right,    # Move window right
-            '<alt>+i': on_move_up,             # Move window up (SWAPPED)
-            '<alt>+j': on_move_down,           # Move window down (SWAPPED)
-            '<alt>+o': on_reset_interview,     # Reset interview session
-            '<alt>+<up>': on_scroll_up_start,  # Start continuous scroll up (NEW)
-            '<alt>+<down>': on_scroll_down_start,  # Start continuous scroll down (NEW)
-        }
+        # Single keyboard listener with win32_event_filter for conditional layout-independent key suppression
+        listener_ref = None
+        pressed_keys = set()
         
-        with keyboard.GlobalHotKeys(hotkey_map) as h:
-            h.join()
+        # VK codes for Alt key variants — we suppress these so browsers never enter "menu mode"
+        ALT_VK_CODES = {0x12, 0xA4, 0xA5}  # VK_MENU, VK_LMENU, VK_RMENU
+
+        def win32_event_filter(msg, data):
+            # msg values: WM_KEYDOWN (0x0100), WM_SYSKEYDOWN (0x0104), WM_KEYUP (0x0101), WM_SYSKEYUP (0x0105)
+            is_down = (msg == 0x0100 or msg == 0x0104)
+            is_up = (msg == 0x0101 or msg == 0x0105)
+            
+            vk = data.vkCode
+            
+            # Handle key tracking to ignore auto-repeats (WH_KEYBOARD_LL doesn't provide previous state)
+            is_auto_repeat = False
+            if is_down:
+                if vk in pressed_keys:
+                    is_auto_repeat = True
+                else:
+                    pressed_keys.add(vk)
+            elif is_up:
+                pressed_keys.discard(vk)
+
+            # --- SUPPRESS ALT KEY ITSELF ---
+            # When Alt is pressed alone, browsers enter "menu-bar mode" (Edge shows "..." highlighted,
+            # displays "Alt+F" tooltip). We suppress ALL Alt key events so no app ever sees Alt.
+            # Alt+Tab / Alt+F4 are handled by Windows kernel and bypass this LL hook.
+            if vk in ALT_VK_CODES:
+                active_listener = listener_ref or self.hotkey_listener
+                if active_listener:
+                    active_listener.suppress_event()
+                return True
+
+            # Alt is active if it's a system key message (WM_SYSKEYDOWN/WM_SYSKEYUP)
+            # OR if any Alt key is still tracked as pressed
+            alt_active = (msg == 0x0104 or msg == 0x0105) or bool(pressed_keys & ALT_VK_CODES)
+            
+            if alt_active:
+                if vk in [
+                    0x58, 0x5A, 0x56, 0x53, 0x41, 0x52, 0x51, 0x57, 0x45, 0x54, 
+                    0x4D, 0x55, 0x31, 0x32, 0x33, 0x25, 0x27, 0x49, 0x4A, 0x4F, 
+                    0x26, 0x28
+                ]:
+                    # Dispatch actions layout-independently on KEYDOWN
+                    if is_down and not is_auto_repeat:
+                        # Execute in a separate daemon thread to avoid blocking OS keyboard hooks
+                        if vk == 0x58: Thread(target=on_toggle_ghost, daemon=True).start()
+                        elif vk == 0x5A: Thread(target=on_hide_show, daemon=True).start()
+                        elif vk == 0x56: Thread(target=on_toggle_vision_mode, daemon=True).start()
+                        elif vk == 0x41: Thread(target=on_process_screenshots, daemon=True).start()
+                        elif vk == 0x52: Thread(target=on_reset_screenshot_queue, daemon=True).start()
+                        elif vk == 0x51: Thread(target=on_switch_primary, daemon=True).start()
+                        elif vk == 0x57: Thread(target=on_switch_secondary, daemon=True).start()
+                        elif vk == 0x45: Thread(target=on_auto_select, daemon=True).start()
+                        elif vk == 0x54: Thread(target=on_switch_vision_model, daemon=True).start()
+                        elif vk == 0x4D: Thread(target=on_toggle_mic_mute, daemon=True).start()
+                        elif vk == 0x55: Thread(target=on_toggle_universal_mute, daemon=True).start()
+                        elif vk == 0x31: Thread(target=on_transparency_transparent, daemon=True).start()
+                        elif vk == 0x32: Thread(target=on_transparency_semi, daemon=True).start()
+                        elif vk == 0x33: Thread(target=on_transparency_opaque, daemon=True).start()
+                        elif vk == 0x25: Thread(target=on_move_left, daemon=True).start()
+                        elif vk == 0x27: Thread(target=on_move_right, daemon=True).start()
+                        elif vk == 0x49: Thread(target=on_move_up, daemon=True).start()
+                        elif vk == 0x4A: Thread(target=on_move_down, daemon=True).start()
+                        elif vk == 0x4F: Thread(target=on_reset_interview, daemon=True).start()
+                        elif vk == 0x26: Thread(target=on_scroll_up_start, daemon=True).start()
+                        elif vk == 0x28: Thread(target=on_scroll_down_start, daemon=True).start()
+                        elif vk == 0x53: # S key
+                            shift_active = False
+                            try:
+                                shift_active = (ctypes.windll.user32.GetAsyncKeyState(0x10) & 0x8000) != 0
+                            except:
+                                pass
+                            if shift_active:
+                                Thread(target=on_enable_proctoring_stealth, daemon=True).start()
+                            else:
+                                Thread(target=on_capture_screenshot, daemon=True).start()
+                    
+                    # Handle releases for continuous scrolling stop on KEYUP
+                    elif is_up:
+                        if vk == 0x26 and self.scrolling_up:
+                            self.scrolling_up = False
+                            print("⏹️ Stopping scroll up")
+                        elif vk == 0x28 and self.scrolling_down:
+                            self.scrolling_down = False
+                            print("⏹️ Stopping scroll down")
+
+                    # Suppress the key event from reaching other apps (like the browser)
+                    # NOTE: suppress_event() RAISES A SuppressException to inform pynput!
+                    # It MUST be the very last call in this block, otherwise dispatch won't run.
+                    active_listener = listener_ref or self.hotkey_listener
+                    if active_listener:
+                        active_listener.suppress_event()
+            return True
+
+        self.hotkey_listener = keyboard.Listener(
+            on_press=lambda k: None,
+            on_release=lambda k: None,
+            win32_event_filter=win32_event_filter
+        )
+        listener_ref = self.hotkey_listener
+        
+        print("🚀 Stealth Suppressed Global Keyboard Hook is Active.")
+        with self.hotkey_listener:
+            self.hotkey_listener.join()
 
     def send_preset_switch_signal(self, preset_key: str):
         """Send preset switch signal to the application"""
@@ -1133,7 +1183,7 @@ class WindowManager:
         
         # Write command to a temp file that could be monitored
         temp_dir = tempfile.gettempdir()
-        command_file = os.path.join(temp_dir, "aura_command.json")
+        command_file = os.path.join(temp_dir, "echoshade_command.json")
         
         with open(command_file, "w") as f:
             json.dump(command_data, f)
@@ -1156,7 +1206,7 @@ class WindowManager:
         print("   Alt+Down Arrow: Continuous scroll down (hold for continuous)")
         print("   Alt+V: Toggle vision mode")
         print("   Alt+S: Capture screenshot")
-        print("   Alt+P: Process screenshots with AI")
+        print("   Alt+A: Process screenshots with AI")
         print("   Alt+R: Reset screenshot queue")
         print("   Alt+O: Reset interview session")
         print("   Alt+Q: Switch to primary AI preset")
@@ -1172,8 +1222,8 @@ class WindowManager:
         
         # Ensure we have the handle before starting
         if not self.hwnd:
-            if not self.find_window_by_title("Aura"):
-                 print("❌ Cannot start hotkey listener: Aura window not found.")
+            if not self.find_window_by_title("EchoShade"):
+                 print("❌ Cannot start hotkey listener: EchoShade window not found.")
                  return
         
         listener_thread = Thread(target=self._start_hotkey_listener_thread, daemon=True)
@@ -1203,9 +1253,9 @@ def make_app_opaque() -> bool:
     """Make app window fully opaque"""
     return window_manager.make_opaque()
 
-def find_aura_window() -> bool:
-    """Find and set Aura window for transparency control"""
-    hwnd = window_manager.find_window_by_title("Aura")
+def find_echoshade_window() -> bool:
+    """Find and set EchoShade window for transparency control"""
+    hwnd = window_manager.find_window_by_title("EchoShade")
     return hwnd is not None
 
 def set_app_always_on_top(on_top: bool) -> bool:
@@ -1289,7 +1339,7 @@ def apply_capture_protection(window):
         print("⚠️ Trying multiple search attempts...")
         for attempt in range(5):
             time.sleep(0.05)
-            hwnd = _user32.FindWindowW(None, "Aura")
+            hwnd = _user32.FindWindowW(None, "EchoShade")
             if hwnd:
                 print(f"🔍 Method 3 (attempt {attempt + 1}): Found {hex(hwnd)}")
                 break
@@ -1348,7 +1398,7 @@ if __name__ == '__main__':
 
     # Create a pywebview window for testing purposes
     test_window = webview.create_window(
-        'Aura Stealth Test',
+        'EchoShade Stealth Test',
         html='<h1>This window should be black in screen recordings.</h1>',
         width=800,
         height=600

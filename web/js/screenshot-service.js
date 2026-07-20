@@ -6,6 +6,7 @@ class ScreenshotService {
         this.screenshotQueue = [];
         this.maxScreenshots = 4;
         this.isCapturing = false;
+        this.isProcessing = false;
         this.visionConfig = null;
         this.programmingLanguages = [];
         
@@ -374,11 +375,24 @@ class ScreenshotService {
             
             // Create canvas and capture frame
             const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            
+            // Limit max width to 1024px to save bandwidth and token costs while maintaining readability
+            const MAX_WIDTH = 1024;
+            let targetWidth = video.videoWidth;
+            let targetHeight = video.videoHeight;
+            
+            if (targetWidth > MAX_WIDTH) {
+                const scale = MAX_WIDTH / targetWidth;
+                targetWidth = MAX_WIDTH;
+                targetHeight = Math.round(targetHeight * scale);
+                console.log(`📐 Resizing screenshot from ${video.videoWidth}x${video.videoHeight} to ${targetWidth}x${targetHeight} to save token costs`);
+            }
+            
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
             
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
+            ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
             
             // Convert to blob
             const blob = await new Promise(resolve => {
@@ -404,7 +418,7 @@ class ScreenshotService {
             };
             
             this.addToQueue(screenshot);
-            this.showNotification('📸 Screenshot Captured (Global)', `Added to queue (${this.screenshotQueue.length}/${this.maxScreenshots}) - Alt+P to process`, 'success');
+            this.showNotification('📸 Screenshot Captured (Global)', `Added to queue (${this.screenshotQueue.length}/${this.maxScreenshots}) - Alt+A to process`, 'success');
             
             return true;
             
@@ -430,12 +444,22 @@ class ScreenshotService {
         this.screenshotQueue.push(screenshot);
         this.updateQueueUI();
         console.log('📸 Screenshot added to queue:', screenshot.id);
+        
+        // Notify backend of queue size change
+        if (typeof window.sendSocketMessage === 'function') {
+            window.sendSocketMessage('screenshot_queue_update', { count: this.screenshotQueue.length });
+        }
     }
     
     removeFromQueue(screenshotId) {
         this.screenshotQueue = this.screenshotQueue.filter(s => s.id !== screenshotId);
         this.updateQueueUI();
         console.log('🗑️ Screenshot removed from queue:', screenshotId);
+        
+        // Notify backend of queue size change
+        if (typeof window.sendSocketMessage === 'function') {
+            window.sendSocketMessage('screenshot_queue_update', { count: this.screenshotQueue.length });
+        }
     }
     
     clearQueue() {
@@ -443,6 +467,11 @@ class ScreenshotService {
         this.updateQueueUI();
         this.showNotification('🗑️ Queue Cleared', 'All screenshots removed', 'warning');
         console.log('🗑️ Screenshot queue cleared');
+        
+        // Notify backend of queue size change
+        if (typeof window.sendSocketMessage === 'function') {
+            window.sendSocketMessage('screenshot_queue_update', { count: this.screenshotQueue.length });
+        }
     }
     
     updateQueueUI() {
@@ -494,11 +523,17 @@ class ScreenshotService {
             return;
         }
         
+        if (this.isProcessing) {
+            console.log('⏳ Already processing screenshots, ignoring request');
+            return;
+        }
+        
         if (!this.visionConfig) {
             this.showNotification('❌ No Vision Model', 'Configure a vision model in settings', 'error');
             return;
         }
         
+        this.isProcessing = true;
         const processBtn = document.getElementById('process-queue-btn');
         if (processBtn) {
             processBtn.disabled = true;
@@ -532,6 +567,7 @@ class ScreenshotService {
             console.error('❌ Vision processing error:', error);
             this.showNotification('❌ Processing Error', error.message, 'error');
         } finally {
+            this.isProcessing = false;
             if (processBtn) {
                 processBtn.disabled = false;
                 processBtn.textContent = `Process (${this.screenshotQueue.length})`;
@@ -714,7 +750,7 @@ Focus on being educational and helping understand both the solutions and the und
                         <span>Capture</span>
                     </div>
                     <div class="vision-hotkey">
-                        <kbd>Alt+P</kbd>
+                        <kbd>Alt+A</kbd>
                         <span>Process</span>
                     </div>
                     <div class="vision-hotkey">

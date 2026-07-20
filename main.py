@@ -1,3 +1,10 @@
+import sys
+# Configure UTF-8 encoding for standard streams to prevent Windows OEM print errors
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
 import webview
 import uvicorn
 from fastapi import FastAPI, Request
@@ -59,7 +66,7 @@ class GlobalCommandMonitor:
     """Monitors the temp command file for global hotkey commands"""
     
     def __init__(self):
-        self.command_file = os.path.join(tempfile.gettempdir(), "aura_command.json")
+        self.command_file = os.path.join(tempfile.gettempdir(), "echoshade_command.json")
         self.last_command_time = 0
         self.running = False
         self.websocket_manager = None
@@ -195,6 +202,8 @@ class GlobalCommandMonitor:
                 self._execute_browser_command('if (window.switchVisionModel) { window.switchVisionModel(); } else { console.warn("switchVisionModel not available"); }')
             elif command == 'reset_interview':
                 self._execute_browser_command('if (window.resetInterview) { window.resetInterview(); } else { console.warn("resetInterview not available"); }')
+            elif command == 'regenerate_response':
+                self._execute_browser_command('if (window.regenerateResponse) { window.regenerateResponse(); } else { console.warn("regenerateResponse not available"); }')
             elif command == 'scroll':
                 direction = command_data.get('direction', 'down')
                 amount = command_data.get('amount', 150)
@@ -264,11 +273,38 @@ async def read_index(request: Request):
     """Serves the main index.html file."""
     return FileResponse(os.path.join('web', 'index.html'))
 
+def get_local_ip() -> str:
+    """Get the local IP address of this machine, prioritizing physical Wi-Fi/Ethernet adapters."""
+    try:
+        # Enumerate all network interface IPs
+        hostname = socket.gethostname()
+        ips = socket.gethostbyname_ex(hostname)[2]
+        ips = [ip for ip in ips if not ip.startswith("127.")]
+        
+        # 1. Prefer physical Wi-Fi/Ethernet subnet (typically 192.168.0.x or 192.168.1.x)
+        for ip in ips:
+            if ip.startswith("192.168.0.") or ip.startswith("192.168.1."):
+                return ip
+                
+        # 2. Prefer any other 192.168.x.x except VirtualBox Host-Only (192.168.56.x)
+        for ip in ips:
+            if ip.startswith("192.168.") and not ip.startswith("192.168.56."):
+                return ip
+                
+        # 3. Fallback to connecting socket to 8.8.8.8
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        return local_ip
+    except Exception:
+        return "127.0.0.1"
+
 # --- Async Server Management ---
 class UvicornServer:
     """Manages the Uvicorn server as an asyncio task"""
     
-    def __init__(self, app, host="127.0.0.1", port=None):
+    def __init__(self, app, host="0.0.0.0", port=None):
         self.app = app
         self.host = host
         self.port = port if port else find_free_port()
@@ -287,6 +323,12 @@ class UvicornServer:
         self.server = uvicorn.Server(config)
         self.server_task = asyncio.create_task(self.server.serve())
         print(f"🚀 Uvicorn server started on {self.host}:{self.port}")
+        
+        # Print network access information for stealth mobile/external device mode
+        if self.host == "0.0.0.0":
+            local_ip = get_local_ip()
+            print(f"\n📱 [STEALTH REMOTE VIEW] To bypass proctoring completely, open this page on your phone/tablet/second laptop:")
+            print(f"   👉 http://{local_ip}:{self.port}\n")
         
     async def stop(self):
         """Stop the Uvicorn server gracefully"""
@@ -323,14 +365,15 @@ class AsyncioServiceThread:
         self.thread.start()
         print("🚀 Asyncio services thread started")
         
-    def stop(self):
+    def stop(self, join=True):
         """Stop the asyncio services gracefully"""
         if self.shutdown_event:
-            print("🛑 Requesting asyncio services shutdown...")
-            self.shutdown_event.set()
+            if not self.shutdown_event.is_set():
+                print("🛑 Requesting asyncio services shutdown...")
+                self.shutdown_event.set()
             
-        if self.thread and self.thread.is_alive():
-            self.thread.join(timeout=10)  # Wait up to 10 seconds
+        if join and self.thread and self.thread.is_alive():
+            self.thread.join(timeout=5)  # Wait up to 5 seconds
             if self.thread.is_alive():
                 print("⚠️ Asyncio thread did not stop gracefully")
             else:
@@ -416,7 +459,7 @@ def setup_webview_window():
     """Setup and configure the webview window"""
     # Create the pywebview window, loading the FastAPI server
     window = webview.create_window(
-        'Aura',
+        'EchoShade',
         f'http://127.0.0.1:{uvicorn_server.port}',
         width=1000,
         height=750,
@@ -444,7 +487,7 @@ def setup_webview_window():
         time.sleep(1.0)  # Give window more time to fully initialize
         
         # Find window and configure always-on-top (but NOT transparency yet)
-        if window_manager.find_aura_window():
+        if window_manager.find_echoshade_window():
             print("🔍 Window found - setting up always-on-top only")
             
             # Wait a bit more before setting always-on-top
@@ -466,7 +509,7 @@ def setup_webview_window():
                 
             print("ℹ️ Transparency will be applied only during live interview")
         else:
-            print("⚠️ Could not find Aura window for window management")
+            print("⚠️ Could not find EchoShade window for window management")
         
         # Start the global hotkey listener
         window_manager.window_manager.start_hotkey_listener()
@@ -474,7 +517,7 @@ def setup_webview_window():
     # Window closing event handler
     def on_window_closing():
         print("🛑 Window closing, shutting down services...")
-        asyncio_service_thread.stop()
+        asyncio_service_thread.stop(join=False)  # Don't block the UI thread
         return True  # Allow window to close
     
     window.events.shown += on_window_shown
@@ -485,7 +528,7 @@ def setup_webview_window():
 # --- Main Application Entry Point ---
 def main():
     """Main application entry point"""
-    print("🚀 Starting Aura with corrected asyncio-native architecture...")
+    print("🚀 Starting EchoShade with corrected asyncio-native architecture...")
     print("   📋 Architecture: pywebview on main thread, asyncio services in background thread")
     
     try:
@@ -509,7 +552,7 @@ def main():
     finally:
         # Ensure cleanup
         print("🧹 Final cleanup...")
-        asyncio_service_thread.stop()
+        asyncio_service_thread.stop(join=True)  # Now wait for the thread to fully join
         print("✅ Application shutdown complete")
 
 if __name__ == '__main__':

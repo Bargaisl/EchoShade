@@ -75,7 +75,7 @@ class VisionManager:
             self.error_count += 1
             return False
 
-    async def analyze_screenshots(self, prompt: str, screenshots: List[str], languages: List[str] = None) -> Tuple[str, Dict[str, Any]]:
+    async def analyze_screenshots(self, prompt: str, screenshots: List[str], languages: List[str] = None, add_to_history: bool = True) -> Tuple[str, Dict[str, Any]]:
         """Analyze screenshots with instant key rotation on any error — zero delay retries."""
         if not self.client:
             return "I'm sorry, the vision AI service is not available at this time.", {
@@ -115,7 +115,7 @@ class VisionManager:
                     "max_tokens": 8100,
                     "top_p": 0.95
                 }
-
+ 
                 # Add provider-specific routing if available
                 if self.request_params:
                     if self.provider_name == "OpenRouter" and "provider" in self.request_params:
@@ -131,8 +131,8 @@ class VisionManager:
                 
                 analysis = chat_completion.choices[0].message.content.strip()
                 
-                # Add vision analysis to conversation history if context manager available
-                if self.context_manager:
+                # Add vision analysis to conversation history if context manager available and requested
+                if self.context_manager and add_to_history:
                     self.context_manager.add_ai_response(analysis, "vision")
                 
                 # Success!
@@ -265,6 +265,20 @@ class VisionService:
         print(f"⚠️ Vision manager for {provider_name} - {model_name} not found in active providers. Creating on-the-fly.")
         return self._create_vision_manager(provider_name, model_name)
     
+    async def analyze_coding_problem_ocr(self, provider_name: str, model_name: str, 
+                                       screenshots: List[str], prompt: str) -> Tuple[str, Dict[str, Any]]:
+        """Extract text/questions/code from screenshots using a vision model with minimal tokens"""
+        vision_manager = self.get_vision_manager(provider_name, model_name)
+        if not vision_manager:
+            return f"Vision model {provider_name} - {model_name} not available.", {
+                "error": "vision_model_not_found",
+                "provider": provider_name,
+                "model": model_name
+            }
+        
+        # Perform vision analysis using the specific OCR extraction prompt, skipping history addition
+        return await vision_manager.analyze_screenshots(prompt, screenshots, add_to_history=False)
+
     async def analyze_coding_problem(self, provider_name: str, model_name: str, 
                                    screenshots: List[str], languages: List[str] = None) -> Tuple[str, Dict[str, Any]]:
         """Analyze coding problem screenshots with comprehensive prompting"""
@@ -284,140 +298,39 @@ class VisionService:
         return await vision_manager.analyze_screenshots(prompt, screenshots, languages)
     
     def generate_coding_analysis_prompt(self, languages: List[str] = None) -> str:
-        """Generate a comprehensive prompt for analyzing screenshots, capable of handling coding problems, MCQs, or a mix."""
-        
-        # Determine primary programming language and context
-        primary_language = "Java"  # Default fallback
-        language_context = ""
-        sql_available = False
-        
+        """Generate a concise prompt in Russian for analyzing screenshots (MCQs, coding problems, math)"""
+        primary_language = "Java"
         if languages and len(languages) > 0:
             programming_languages = [lang for lang in languages if lang.lower() != 'sql']
-            sql_available = 'sql' in [lang.lower() for lang in languages]
-            
             if programming_languages:
                 primary_language = programming_languages[0]
-                other_languages = programming_languages[1:] if len(programming_languages) > 1 else []
-                
-                language_context = f"**Primary Programming Language (if applicable for coding/MCQs):** {primary_language}\\n"
-                if other_languages:
-                    language_context += f"**Alternative Languages:** {', '.join(other_languages)}\\n"
-            elif sql_available: # Only SQL was selected
-                language_context = f"**Primary Programming Language (default for coding tasks):** {primary_language}\\n**Database Language Detected:** SQL\\n"
-            else: # No languages or only non-SQL, non-programming specified
-                language_context = f"**Primary Programming Language (default for coding tasks):** {primary_language}\\n"
-        else:
-            language_context = f"**Primary Programming Language (default for coding tasks):** {primary_language}\\n"
 
-        # Conditional SQL instructions for coding problems
-        sql_instructions_for_coding = ""
-        if sql_available:
-            sql_instructions_for_coding = f"""
-**🗄️ CONDITIONAL SQL ANALYSIS (for coding problems):** If the coding problem involves database interaction:
-- Document any relevant table structures if deducible.
-- Note relationships and foreign keys if apparent.
-- Provide SQL query solutions or snippets as part of the coding solution if appropriate.
-- If the problem IS an SQL problem, ensure solutions are in SQL.
+        return f"""Ты — ИИ-помощник для экзаменов и тестов.
+Отвечай строго на РУССКОМ языке. Даже если текст на скриншоте на английском — пиши ответ по-русски.
+Давай максимально краткий и прямой ответ без лишних слов, вступлений и эмодзи.
 
-Example SQL solution snippet format (if applicable within a broader coding solution):
-```sql
--- SQL approach: [Brief description]
-SELECT ... FROM ... WHERE ...;
-```
----
-"""
+Определи тип контента на скриншотах и следуй правилам:
 
-        # The prompt structure
-        return f"""You are an expert AI assistant. Your task is to analyze the content of the provided screenshots.
+1. Если это тест с вариантами ответов (MCQ):
+- Укажи текст вопроса или его краткую суть.
+- Выведи ТОЛЬКО правильный вариант (буква и текст варианта).
+- Дай краткое пояснение выбора в 1-2 предложения.
+Пример:
+Вопрос: [Краткая суть]
+Правильный ответ: A) [Текст]
+Пояснение: [1-2 предложения]
 
-**Overall Goal:** Provide a clear, accurate, and comprehensive analysis based on the dominant type of content in the screenshots.
+2. Если это задача по программированию или исправление кода с багами:
+- Напиши ИСКЛЮЧИТЕЛЬНО готовый рабочий код в одном блоке ```{primary_language.lower()}.
+- Код должен быть абсолютно правильным, эффективным и обрабатывать все крайние случаи.
+- Под кодом укажи сложность одной строчкой (например: Time: O(n), Space: O(1)).
+- Не пиши никаких текстовых вступлений, списков багов, описания ошибок или рассуждений вне блока кода. Только рабочий код. Ни одного лишнего слова за пределами блока кода!
 
-**Content Assessment:**
-First, carefully assess the screenshots to determine the primary type of information presented. This could be:
-1.  **Multiple Choice Questions (MCQs):** Questions with several options, covering any topic (e.g., programming, aptitude, cloud technologies like AWS/GCP, quantitative, general knowledge).
-2.  **Coding Problem:** A specific programming challenge requiring algorithmic thinking, code implementation, and analysis.
-3.  **Mixed Content:** A combination of MCQs and coding problems, or other informational content.
-4.  **Other:** If the content doesn't fit the above, describe it and assist as best as you can.
+3. Если это математическая/числовая задача:
+- Покажи только краткую формулу/расчёт и ответ. Только суть.
 
-{language_context}
----
-
-**SECTION 1: MULTIPLE CHOICE QUESTION (MCQ) ANALYSIS**
-*If MCQs are present (either exclusively or as part of mixed content), use this section.*
-
-**Instructions for MCQs:**
-- This applies to MCQs on **any subject**.
-- If there are multiple MCQs, address **each one individually and systematically**.\n
-For EACH MCQ identified:
-1.  **Question Number/Identifier:** (e.g., Q1, Question 5, or a brief unique part of the question if unnumbered)
-2.  **Question Text:** Clearly restate or summarize the question.
-3.  **Options:** List all provided options (e.g., A. Option 1, B. Option 2, C. Option 3, D. Option 4).
-4.  **Explanation:** Provide a clear and concise justification. Analyze each option as needed. Explain why the identified correct option is indeed correct, and if helpful, why other key options are incorrect. Your reasoning should clearly lead to the answer.
-5.  **Correct Answer:** After providing the explanation, clearly state the correct option (e.g., "Based on the explanation, the correct answer is C. Option 3").\n
----
-
-**SECTION 2: CODING PROBLEM ANALYSIS & SOLUTION**
-*If a coding problem is present (either exclusively or as part of mixed content), use this section. This can also apply if MCQs are about specific coding concepts that require a detailed algorithmic explanation.*
-
-{sql_instructions_for_coding if sql_available else "<!-- No specific SQL instructions for coding problem as SQL was not indicated as a relevant language. -->"}
-
-**I. 🎯 PROBLEM ANALYSIS (for the coding problem)**
-
-A.  **Problem Understanding:**
-    -   **Problem Statement:** Consolidate information from ALL screenshots to give a clear restatement of the coding problem.
-    -   **Input/Output:** Specify the expected input format, output format, and provide examples if available.
-    -   **Constraints & Edge Cases:** List key limitations, constraints (e.g., time/space complexity), and important edge cases to consider.
-    -   **Core Challenge:** Identify the main algorithmic or conceptual difficulty of the problem.
-
-**II. 🚀 SOLUTION APPROACHES (for the coding problem)**
-*Provide at least two well-explained approaches. Focus on clarity, correctness, and interview-readiness. Use {primary_language} for code examples unless the problem specifies otherwise.*\\n\nA.  **Approach 1: [RECOMMENDED/OPTIMAL SOLUTION]**
-    1.  **Algorithm/Technique & Initial Intuition:** Identify the core algorithm/technique (e.g., "Two Pointers", "BFS", "Dynamic Programming"). Explain the initial intuition or key insight that suggests this approach is suitable for the problem based on its characteristics (e.g., sorted input, graph traversal, overlapping subproblems).
-    2.  **Complexity Analysis:**
-        -   Time Complexity: O(?) (Explain reasoning)
-        -   Space Complexity: O(?) (Explain reasoning)
-    3.  **Code Implementation ({primary_language}):**
-        ```{(primary_language).lower()}
-// Approach 1: [Brief description of this specific implementation, highlighting key logic] [RECOMMENDED/OPTIMAL SOLUTION]
-// Time: O(?), Space: O(?)
-
-// [Complete, production-ready code with clear comments and explanations for the coding problem]
-// [Ensure the code is directly usable and well-formatted]
-        ```
-    4.  **Detailed Walkthrough / Dry Run:** Provide a detailed step-by-step walkthrough (dry run) of your code with a concrete example. Explain how the variables change and how the logic progresses to reach the solution for that example. Clearly show the state at each important step.
-    5.  **Justification for Choice & Optimality:** Elaborate on why this specific algorithm/technique was chosen as the recommended solution. Discuss its advantages (e.g., optimality in time/space for the given constraints, clarity, common patterns for this problem type) compared to other potential naive or less optimal approaches.\\n\nB.  **Approach 2: [ALTERNATIVE SOLUTION] (Optional, if relevant)**
-    1.  **Algorithm/Technique & Initial Intuition:** Identify the alternative algorithm/technique. Explain the intuition or reason for considering this alternative.
-    2.  **Complexity Analysis:**
-        -   Time Complexity: O(?) (Explain reasoning)
-        -   Space Complexity: O(?) (Explain reasoning)
-    3.  **Code Implementation ({primary_language}):**
-        ```{(primary_language).lower()}
-// Approach 2: [Brief description of this specific implementation, highlighting key logic]  
-// Time: O(?), Space: O(?)
-
-// [Alternative implementation with comments for the coding problem]
-        ```
-    4.  **Detailed Walkthrough / Dry Run:** Provide a detailed step-by-step walkthrough (dry run) of your alternative code with a concrete example. Explain how the variables change and how the logic progresses.
-    5.  **Trade-offs & When to Use:** Compare this approach with Approach 1 (e.g., "Simpler to implement but less efficient for large inputs", "Better space complexity under certain conditions", "Useful if constraints were different"). Explain when this alternative might be preferred or is worth discussing.\\n\n**III. 📊 COMPARISON & INTERVIEW STRATEGY (for coding problems)**
-
-| Aspect         | Approach 1        | Approach 2 (if provided) |
-|----------------|-------------------|--------------------------|
-| **Time**       | O(?)              | O(?)                     |
-| **Space**      | O(?)              | O(?)                     |
-| **Implementation Complexity** | [e.g., Simple/Medium/Complex] | [e.g., Simple/Medium/Complex] |
-
-**Interview Recommendation:**
-- Which approach to present first in an interview and why.
-- When to discuss the alternative approach.
-
-**Potential Follow-up Questions from Interviewer:**
-- List 2-3 likely follow-up questions an interviewer might ask about your solution(s) and brief points for how to answer them.
-
----
-
-**Final Instructions:**
-- Be concise yet thorough.
-- Ensure your analysis directly addresses the content of the screenshots.
-- If providing code, make sure it is well-commented and follows best practices for {primary_language}.
+4. Для терминов:
+- Чёткое краткое определение и пример.
 """
 
     async def get_all_vision_status(self) -> Dict[str, Dict[str, Any]]:
