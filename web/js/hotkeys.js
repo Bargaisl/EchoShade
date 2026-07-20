@@ -1,4 +1,4 @@
-// Hotkeys Module for Aura
+// Hotkeys Module for EchoShade
 // Provides keyboard shortcuts for transparency and other controls
 
 import { devLog } from './config.js';

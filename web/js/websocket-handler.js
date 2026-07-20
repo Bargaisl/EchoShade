@@ -6,7 +6,7 @@ export class WebSocketHandler {
         this.stateManager = stateManager;
         this.socket = null;
         this.providerManager = null; // Direct reference to the ProviderManager
-        this.session_id = sessionStorage.getItem('aura_session_id') || null;
+        this.session_id = sessionStorage.getItem('echoshade_session_id') || null;
         this.reconnect_attempts = 0;
         this.max_reconnect_attempts = 5;
         this.is_intentionally_closing = false;
@@ -91,7 +91,7 @@ export class WebSocketHandler {
 
         if (data.type === 'session_created') {
             this.session_id = data.payload.session_id;
-            sessionStorage.setItem('aura_session_id', this.session_id);
+            sessionStorage.setItem('echoshade_session_id', this.session_id);
             console.log(`🚀 New session started: ${this.session_id}`);
             // Resolve the connection promise now that session is confirmed.
             if (this.resolveConnectionPromise) {
@@ -101,7 +101,7 @@ export class WebSocketHandler {
         } else if (data.type === 'session_resumed') {
             console.log(`✅ Session resumed: ${data.payload.session_id}`);
             this.session_id = data.payload.session_id;
-            sessionStorage.setItem('aura_session_id', this.session_id);
+            sessionStorage.setItem('echoshade_session_id', this.session_id);
             
             // Also resolve the promise on resume.
             if (this.resolveConnectionPromise) {
@@ -142,8 +142,8 @@ export class WebSocketHandler {
         if (this.socket) {
             this.socket.close();
         }
-        this.session_id = sessionStorage.getItem('aura_session_id') || null; // Clear session on intentional disconnect
-        sessionStorage.removeItem('aura_session_id'); // Clear session cache
+        this.session_id = sessionStorage.getItem('echoshade_session_id') || null; // Clear session on intentional disconnect
+        sessionStorage.removeItem('echoshade_session_id'); // Clear session cache
     }
 
     handleMessage(data) {
@@ -527,7 +527,7 @@ export class WebSocketHandler {
         
         // Clear local session ID and storage
         this.session_id = null;
-        sessionStorage.removeItem('aura_session_id');
+        sessionStorage.removeItem('echoshade_session_id');
         
         // Stop audio processing
         import('./audio_handler.js').then(module => {

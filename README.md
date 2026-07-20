@@ -1,7 +1,7 @@
-# 👻 Aura — The AI They Can't See, Can't Detect, Can't Stop
+# 👻 EchoShade — The AI They Can't See, Can't Detect, Can't Stop
 
 <div align="center">
-  <img src="logo.png" alt="Aura Logo" width="300" />
+  <img src="logo.png" alt="EchoShade Logo" width="300" />
 </div>
 
 **An invisible AI overlay that lives on your screen — answers questions, solves problems, analyzes screenshots, and feeds you real-time intelligence. Works during interviews, exams, meetings, or anything on your screen. Invisible to screen recordings. Undetectable by proctoring software. You see everything. They see nothing.**
@@ -10,7 +10,7 @@
 [![Stealth Mode](https://img.shields.io/badge/Stealth-Screen%20Capture%20Protected-green.svg)](https://github.com)
 [![Cost](https://img.shields.io/badge/Cost-Free%20%7C%20Open%20Source-brightgreen.svg)](https://github.com)
 [![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=flat&logo=windows&logoColor=white)](#-system-requirements)
-[![macOS](https://img.shields.io/badge/macOS-In%20Progress-orange?style=flat&logo=apple&logoColor=white)](https://github.com/Rkcr7/Aura-AI/tree/macos)
+[![macOS](https://img.shields.io/badge/macOS-In%20Progress-orange?style=flat&logo=apple&logoColor=white)](https://github.com/Rkcr7/EchoShade/tree/macos)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 
 > **👻 Invisible by Design** — Screen capture protected. Hidden from taskbar. Undetectable by Zoom, Teams, Google Meet, and every proctoring tool on the market.
@@ -19,25 +19,25 @@
 
 > **⚡ Stupidly Fast** — Powered by **Cerebras** (~2,000-3,000 tokens/sec) and **Groq** (~400-700 tokens/sec) — the two fastest AI inference engines on Earth. Answers hit your screen before the interviewer finishes talking. Nothing else comes close.
 
-> **🖥️ Platform Support** — **Windows 10/11** is the primary, fully-supported platform (this `master` branch). A **macOS** port is in active development on the [`macos`](https://github.com/Rkcr7/Aura-AI/tree/macos) branch — feature parity is **work-in-progress** and some stealth behaviors are limited compared to Windows. macOS contributors welcome via PRs targeting the `macos` branch.
+> **🖥️ Platform Support** — **Windows 10/11** is the primary, fully-supported platform (this `master` branch). A **macOS** port is in active development on the [`macos`](https://github.com/Rkcr7/EchoShade/tree/macos) branch — feature parity is **work-in-progress** and some stealth behaviors are limited compared to Windows. macOS contributors welcome via PRs targeting the `macos` branch.
 
 ---
 
-## ✨ What is Aura?
+## ✨ What is EchoShade?
 
-Aura isn't just another interview prep tool. It's your secret weapon for **any challenge**—from aptitude tests to quantitative brain-twisters, behavioral showdowns to certification exams. Aura is a **revolutionary AI assistant** that operates in real-time, providing candidates with the critical insights they need to excel in high-stakes situations—all without ever tripping tab-switching warnings, thanks to its stealthy, seamless design.
+EchoShade isn't just another interview prep tool. It's your secret weapon for **any challenge**—from aptitude tests to quantitative brain-twisters, behavioral showdowns to certification exams. EchoShade is a **revolutionary AI assistant** that operates in real-time, providing candidates with the critical insights they need to excel in high-stakes situations—all without ever tripping tab-switching warnings, thanks to its stealthy, seamless design.
 
-Imagine having a world-class expert whispering in your ear, helping you deconstruct complex problems, articulate your thoughts, and navigate the toughest questions with confidence. **That's Aura.**
+Imagine having a world-class expert whispering in your ear, helping you deconstruct complex problems, articulate your thoughts, and navigate the toughest questions with confidence. **That's EchoShade.**
 
 ### How It Works
 
-Aura sits on top of your screen as an **invisible overlay** during live interviews and exams. It **listens** to conversations in real-time via Deepgram speech-to-text, **generates** intelligent coaching responses using blazing-fast LLMs (Groq, Cerebras, Gemini), and lets you **screenshot** any problem for instant Vision AI solutions—all while staying **completely hidden** from screen recordings, proctoring software, and human observers.
+EchoShade sits on top of your screen as an **invisible overlay** during live interviews and exams. It **listens** to conversations in real-time via Deepgram speech-to-text, **generates** intelligent coaching responses using blazing-fast LLMs (Groq, Cerebras, Gemini), and lets you **screenshot** any problem for instant Vision AI solutions—all while staying **completely hidden** from screen recordings, proctoring software, and human observers.
 
 ---
 
-## 🎥 See Aura in Action
+## 🎥 See EchoShade in Action
 
-Real screenshots and recordings from a live Aura session — no mockups, no staging.
+Real screenshots and recordings from a live EchoShade session — no mockups, no staging.
 
 ---
 
@@ -47,7 +47,7 @@ Real screenshots and recordings from a live Aura session — no mockups, no stag
 <summary><b>Step 1 · Your Profile — Enter your details and pick an interview focus</b></summary>
 
 <div align="center">
-  <img src="Media/Onboarding-1.png" alt="Aura Onboarding — Profile Setup" width="750" />
+  <img src="Media/Onboarding-1.png" alt="EchoShade Onboarding — Profile Setup" width="750" />
 </div>
 
 Fill in your **name**, **target company**, and **role**, then select your **interview focus** (Behavioral, Coding, System Design, Data Structures, Cultural Fit, or HR/Screening). Paste your full resume and job description for hyper-personalized coaching. Hit the **⚡ Demo** button to auto-fill with sample data for quick testing.
@@ -58,7 +58,7 @@ Fill in your **name**, **target company**, and **role**, then select your **inte
 <summary><b>Step 2 · AI Setup — Configure primary, secondary, and vision models</b></summary>
 
 <div align="center">
-  <img src="Media/AI Setup-2.png" alt="Aura AI Setup — Model Configuration" width="750" />
+  <img src="Media/AI Setup-2.png" alt="EchoShade Setup — Model Configuration" width="750" />
 </div>
 
 Choose your **Primary AI Model** (default for all responses — Cerebras shown here for maximum speed) and an optional **Secondary Model** (switch anytime with `Alt+W`). Below, configure your **Vision AI Model** for screenshot analysis — Gemini delivers the best accuracy, Groq Llama 4 is the fastest. The **Quick Switch Hotkeys** panel shows `Alt+Q`, `Alt+W`, `Alt+E` for instant model switching mid-interview.
@@ -69,7 +69,7 @@ Choose your **Primary AI Model** (default for all responses — Cerebras shown h
 <summary><b>Step 3 · Advanced Config — Manage API keys and provider connections</b></summary>
 
 <div align="center">
-  <img src="Media/Config-3.png" alt="Aura Advanced Config — API Key Management" width="750" />
+  <img src="Media/Config-3.png" alt="EchoShade Advanced Config — API Key Management" width="750" />
 </div>
 
 The **Advanced Config** tab is the raw control panel. Enter your **Deepgram API key** (speech-to-text), then manage **multiple API keys per provider** — notice Groq showing 5 keys for maximum rate-limit resilience. Each provider shows its base URL, keys, and a **Test Connection** button to verify everything works before going live. Changes are saved directly to `ai_providers.json` and `.env`.
@@ -80,10 +80,10 @@ The **Advanced Config** tab is the raw control panel. Enter your **Deepgram API 
 <summary><b>Step 4 · Commands & Tips — Complete hotkey reference with pro tips</b></summary>
 
 <div align="center">
-  <img src="Media/Commands-4.png" alt="Aura Commands & Tips — Hotkey Reference" width="750" />
+  <img src="Media/Commands-4.png" alt="EchoShade Commands & Tips — Hotkey Reference" width="750" />
 </div>
 
-The final onboarding tab is your **cheat sheet**. Three highlighted pro-tip cards cover: 🔒 **Stealth Professional Tip** (always use global hotkeys — never click Aura during proctored exams), 📸 **Multi-Screenshot Analysis** (queue up to 4 screenshots with `Alt+S`, process all at once with `Alt+P`), and ⚡ **Speed Strategy** (use `Alt+E` to auto-select the fastest healthy provider). Below, every hotkey is organized by category with color-coded badges.
+The final onboarding tab is your **cheat sheet**. Three highlighted pro-tip cards cover: 🔒 **Stealth Professional Tip** (always use global hotkeys — never click EchoShade during proctored exams), 📸 **Multi-Screenshot Analysis** (queue up to 4 screenshots with `Alt+S`, process all at once with `Alt+P`), and ⚡ **Speed Strategy** (use `Alt+E` to auto-select the fastest healthy provider). Below, every hotkey is organized by category with color-coded badges.
 
 </details>
 
@@ -96,16 +96,16 @@ The final onboarding tab is your **cheat sheet**. Three highlighted pro-tip card
 <td width="50%">
 
 <div align="center">
-  <img src="Media/Permissions-5.png" alt="Aura Pre-Flight — Requesting Microphone Permission" width="370" />
+  <img src="Media/Permissions-5.png" alt="EchoShade Pre-Flight — Requesting Microphone Permission" width="370" />
 </div>
 
-**Microphone Permission Request** — Aura's Pre-Flight Check runs before every session. It validates your microphone access, backend connection, Deepgram API, and all configured AI providers. Grant the mic permission prompt to proceed.
+**Microphone Permission Request** — EchoShade's Pre-Flight Check runs before every session. It validates your microphone access, backend connection, Deepgram API, and all configured AI providers. Grant the mic permission prompt to proceed.
 
 </td>
 <td width="50%">
 
 <div align="center">
-  <img src="Media/permissions-6.png" alt="Aura Pre-Flight — All Systems Green" width="370" />
+  <img src="Media/permissions-6.png" alt="EchoShade Pre-Flight — All Systems Green" width="370" />
 </div>
 
 **All Systems Go ✅** — Every check is green: Microphone Permission OK, Microphone Selected (NVIDIA Broadcast detected), Backend Connected, Deepgram API OK, Primary Cerebras OK, Secondary Groq OK, Primary Vision Gemini OK, Secondary Vision Groq OK. Hit **Start Interview** and you're live.
@@ -118,57 +118,57 @@ The final onboarding tab is your **cheat sheet**. Three highlighted pro-tip card
 
 ### 👻 Stealth Mode in Action
 
-See how Aura overlays **directly on top of LeetCode** during a live coding session — invisible to screen recordings, fully transparent, and controlled entirely via hotkeys.
+See how EchoShade overlays **directly on top of LeetCode** during a live coding session — invisible to screen recordings, fully transparent, and controlled entirely via hotkeys.
 
 <table>
 <tr>
 <td width="50%">
 
 <div align="center">
-  <img src="Media/transparency-8.png" alt="Aura Stealth — Screen Share Protection" width="370" />
+  <img src="Media/transparency-8.png" alt="EchoShade Stealth — Screen Share Protection" width="370" />
 </div>
 
-**Screen Share Protection** — Aura runs during a live LeetCode session with "Share Entire Screen" active. The Aura window overlays the coding environment but is **excluded from the screen capture** via `WDA_EXCLUDEFROMCAPTURE`. Notice the "Microphone Muted" status bar and model switcher visible only to the user.
+**Screen Share Protection** — EchoShade runs during a live LeetCode session with "Share Entire Screen" active. The EchoShade window overlays the coding environment but is **excluded from the screen capture** via `WDA_EXCLUDEFROMCAPTURE`. Notice the "Microphone Muted" status bar and model switcher visible only to the user.
 
 </td>
 <td width="50%">
 
 <div align="center">
-  <img src="Media/transparency-9 - max trasnparency.png" alt="Aura Stealth — Maximum Transparency Overlay" width="370" />
+  <img src="Media/transparency-9 - max trasnparency.png" alt="EchoShade Stealth — Maximum Transparency Overlay" width="370" />
 </div>
 
-**Maximum Transparency Mode** — With `Alt+1` (40% opacity), Aura becomes a near-invisible ghost overlay. The Live Interview Session indicator, MUTED/RESET controls, and AI model badges (`Primary: Cerebras`) are barely visible — just enough for you, completely invisible to anyone observing your screen. The LeetCode problem beneath is fully readable.
+**Maximum Transparency Mode** — With `Alt+1` (40% opacity), EchoShade becomes a near-invisible ghost overlay. The Live Interview Session indicator, MUTED/RESET controls, and AI model badges (`Primary: Cerebras`) are barely visible — just enough for you, completely invisible to anyone observing your screen. The LeetCode problem beneath is fully readable.
 
 </td>
 </tr>
 </table>
 
 <div align="center">
-  <img src="Media/Permissions-7.png" alt="Aura Stealth — Vision AI Permissions with Screen Share" width="750" />
+  <img src="Media/Permissions-7.png" alt="EchoShade Stealth — Vision AI Permissions with Screen Share" width="750" />
 </div>
 
-<p align="center"><b>Vision AI + Screen Share</b> — When using Vision AI during a proctored session, Aura shares your entire screen for screenshot capture. The "Also share system audio" toggle (circled) enables audio capture alongside visual analysis. The Aura window itself remains hidden from the capture feed — only you see it.</p>
+<p align="center"><b>Vision AI + Screen Share</b> — When using Vision AI during a proctored session, EchoShade shares your entire screen for screenshot capture. The "Also share system audio" toggle (circled) enables audio capture alongside visual analysis. The EchoShade window itself remains hidden from the capture feed — only you see it.</p>
 
 ---
 
 ### 🎬 Video Demos
 
-> **Note:** Click any link below to watch the `.mp4` demo directly. These recordings show actual Aura features running in real-time.
+> **Note:** Click any link below to watch the `.mp4` demo directly. These recordings show actual EchoShade features running in real-time.
 
 | Demo | What You'll See | File |
 |:-----|:----------------|:-----|
-| 👻 **Ghost Mode Toggle** | Toggling click-through mode with `Alt+X` — interact with apps underneath Aura while its overlay stays visible. Aura becomes a transparent layer you can see but not accidentally click | [▶ easy-toggle-alt+z-12.mp4](Media/easy-toggle-alt+z-%2012.mp4) |
-| 🖱️ **Click Passthrough** | Demonstrating Ghost Mode in practice — clicks pass directly through Aura's overlay to the application beneath (browser, IDE, exam platform). Zero interference with your workflow | [▶ passthrough-10.mp4](Media/paasthrough-10.mp4) |
-| 🎤 **Real-Time AI Coaching** | Full end-to-end demo: live microphone transcription → AI processing → real-time coaching responses appearing on the overlay. Watch Aura listen, think, and respond in under 2 seconds | [▶ realtime-working-11.mp4](Media/realtime-working-11.mp4) |
+| 👻 **Ghost Mode Toggle** | Toggling click-through mode with `Alt+X` — interact with apps underneath EchoShade while its overlay stays visible. EchoShade becomes a transparent layer you can see but not accidentally click | [▶ easy-toggle-alt+z-12.mp4](Media/easy-toggle-alt+z-%2012.mp4) |
+| 🖱️ **Click Passthrough** | Demonstrating Ghost Mode in practice — clicks pass directly through EchoShade's overlay to the application beneath (browser, IDE, exam platform). Zero interference with your workflow | [▶ passthrough-10.mp4](Media/paasthrough-10.mp4) |
+| 🎤 **Real-Time AI Coaching** | Full end-to-end demo: live microphone transcription → AI processing → real-time coaching responses appearing on the overlay. Watch EchoShade listen, think, and respond in under 2 seconds | [▶ realtime-working-11.mp4](Media/realtime-working-11.mp4) |
 | 📸 **Vision AI Screenshot** | Capturing a problem with `Alt+S`, processing with `Alt+P`, and receiving AI-generated solutions overlaid on screen. Multi-screenshot queue in action with instant analysis | [▶ screenshot-13.mp4](Media/screenshot-13.mp4) |
 
 ---
 
-## 🔥 Aura in the Hot Seat: Crush Every Round
+## 🔥 EchoShade in the Hot Seat: Crush Every Round
 
 ### The Scene: Your Make-or-Break Moment
 
-Clock's ticking. Stakes are high. Aura's got you covered—whether it's an interview or an exam. Its **Stealth Mode** ensures you can access its powerful features without raising any red flags, keeping your focus entirely on the task at hand.
+Clock's ticking. Stakes are high. EchoShade's got you covered—whether it's an interview or an exam. Its **Stealth Mode** ensures you can access its powerful features without raising any red flags, keeping your focus entirely on the task at hand.
 
 ---
 
@@ -176,8 +176,8 @@ Clock's ticking. Stakes are high. Aura's got you covered—whether it's an inter
 
 **The Curveball**: *"Tell me about a time you turned failure into success."*
 
-- **Without Aura**: Stammering, scrambling, stuck.
-- **With Aura (Stealth Mode active)**:
+- **Without EchoShade**: Stammering, scrambling, stuck.
+- **With EchoShade (Stealth Mode active)**:
   - Real-time transcription catches every word, discreetly.
   - **STAR-method gold** pops up on your screen, invisible to others—customized to your resume and role.
   - You drop a story so smooth, they're taking notes.
@@ -190,14 +190,14 @@ Clock's ticking. Stakes are high. Aura's got you covered—whether it's an inter
 
 **The Brainteaser**: *"Calculate the probability of 7 consecutive heads in all three coins tossed at same time in 100 coin tosses."*
 
-- **With Aura (Stealth Mode is your superpower here)**:
-  1. `Alt+Shift+S` → **Proctoring Stealth Mode** activates. Aura becomes a transparent, click-through overlay, invisible to screen recording and proctoring software.
+- **With EchoShade (Stealth Mode is your superpower here)**:
+  1. `Alt+Shift+S` → **Proctoring Stealth Mode** activates. EchoShade becomes a transparent, click-through overlay, invisible to screen recording and proctoring software.
   2. `Alt+V` → Vision Mode activates, ready to analyze.
   3. `Alt+S` → Silently screenshots the problem from the exam platform.
   4. `Alt+P` → Quantitative AI analyzes the problem in the background.
   5. Solutions appear ghosted on your screen—only you can see them.
   6. Submit answers confidently without ever switching tabs or alerting proctoring systems.
-  7. Control Aura's window movements and scroll through suggestions using global hotkeys, all while the exam window remains active and focused.
+  7. Control EchoShade's window movements and scroll through suggestions using global hotkeys, all while the exam window remains active and focused.
 
 *You solve complex problems with ease, leaving no trace.*
 
@@ -207,15 +207,15 @@ Clock's ticking. Stakes are high. Aura's got you covered—whether it's an inter
 
 **The Puzzle**: Reverse-engineer a slow API call under pressure during a live coding session.
 
-- **Without Aura**: Sweat-soaked guesswork.
-- **With Aura (Stealth Mode ensuring seamless assistance)**:
+- **Without EchoShade**: Sweat-soaked guesswork.
+- **With EchoShade (Stealth Mode ensuring seamless assistance)**:
   1. `Alt+V` → Vision Mode ignites, ready for the code.
   2. `Alt+S` → Screenshot the problematic code or error message, discreetly.
   3. `Alt+P` → Vision AI unleashes its power, overlaying suggestions:
      - **Killer solutions** in JS, Python, Java, SQL, and more.
      - **Time complexity breakdowns** for optimal answers.
      - **Pro-level explanations** to articulate your thought process.
-     - All assistance is delivered via Aura's overlay, invisible to screen sharing.
+     - All assistance is delivered via EchoShade's overlay, invisible to screen sharing.
 
 *You code like a rockstar, navigating complex challenges with AI-powered insights, leaving them stunned.*
 
@@ -225,9 +225,9 @@ Clock's ticking. Stakes are high. Aura's got you covered—whether it's an inter
 
 **The Beast**: *"Design a global payment system for millions."*
 
-- **With Aura (Stealth Mode providing discreet guidance)**:
+- **With EchoShade (Stealth Mode providing discreet guidance)**:
   - **Real-time transcription** catches the requirements as the interviewer speaks.
-  - Aura provides quick analysis of constraints, goals, and trade-offs—visible only to you.
+  - EchoShade provides quick analysis of constraints, goals, and trade-offs—visible only to you.
   - **API Design**: RESTful/GraphQL endpoint suggestions with detailed descriptions.
   - **Scalable architectures**—sharding, replication, microservices, oh my!
   - **Caching tricks** and **load balancing hacks**.
@@ -237,11 +237,11 @@ Clock's ticking. Stakes are high. Aura's got you covered—whether it's an inter
 
 ---
 
-## 🌟 Why Aura Obliterates the Competition
+## 🌟 Why EchoShade Obliterates the Competition
 
-Aura doesn't just compete—it **crushes** subscription traps like **Interview Coder**, **Parakeet AI**, **LockedIn AI** and similars. Check the carnage:
+EchoShade doesn't just compete—it **crushes** subscription traps like **Interview Coder**, **Parakeet AI**, **LockedIn AI** and similars. Check the carnage:
 
-| **Feature** | **Aura** | **Interview Coder** | **Parakeet AI** | **LockedIn AI** |
+| **Feature** | **EchoShade** | **Interview Coder** | **Parakeet AI** | **LockedIn AI** |
 |---|---|---|---|---|
 | **Cost** | 🆓 Free Forever | 💸 $25/month | 💸 Credits | 💸 Subscription |
 | **Vision AI** | ✅ Screenshots + Diagrams + Code | ❌ Nope | ❌ Nada | ❌ Never |
@@ -250,7 +250,7 @@ Aura doesn't just compete—it **crushes** subscription traps like **Interview C
 | **Scope** | ✅ Coding, System Design, Aptitude, Quantitative, Behavioral | ✅ Coding Only | ✅ Barely | ✅ Meh |
 | **Speed** | ⚡ **Fastest on Earth** — Cerebras (~2,000 tok/s) + Groq (~400 tok/s) = sub-second full answers | ❌ Slow (GPT latency) | ❌ Sluggish | ❌ Laggy |
 
-**Aura's Knockout Punch**: Fastest inference in the game (Cerebras + Groq), totally invisible (screen-capture-proof stealth), and **$0 forever**. Competitors charge $25/month for slower, weaker, detectable tools. Aura buries them all.
+**EchoShade's Knockout Punch**: Fastest inference in the game (Cerebras + Groq), totally invisible (screen-capture-proof stealth), and **$0 forever**. Competitors charge $25/month for slower, weaker, detectable tools. EchoShade buries them all.
 
 ---
 
@@ -258,20 +258,20 @@ Aura doesn't just compete—it **crushes** subscription traps like **Interview C
 
 ### 👻 **Stealth Mode: The Undetectable Edge**
 
-Aura's Stealth Mode is engineered to provide powerful AI assistance while remaining **completely invisible and undetectable** to proctoring software, screen recording tools, and human observers. This is crucial for high-stakes online exams, remote interviews, and any situation requiring discreet support.
+EchoShade's Stealth Mode is engineered to provide powerful AI assistance while remaining **completely invisible and undetectable** to proctoring software, screen recording tools, and human observers. This is crucial for high-stakes online exams, remote interviews, and any situation requiring discreet support.
 
-**What it is:** Stealth Mode transforms Aura into a transparent, click-through overlay that seamlessly integrates with your workflow. It operates without creating new windows that could trigger alerts, and all interactions are managed via global hotkeys—meaning you **never need to switch focus** from your primary application.
+**What it is:** Stealth Mode transforms EchoShade into a transparent, click-through overlay that seamlessly integrates with your workflow. It operates without creating new windows that could trigger alerts, and all interactions are managed via global hotkeys—meaning you **never need to switch focus** from your primary application.
 
 **Core Components:**
 
 | Component | What It Does |
 |-----------|-------------|
 | 🛡️ **Screen Capture Protection** | Invisible to screen recording, browser screen-share, Zoom, Teams, Google Meet, and GoToMeeting — uses low-level `WDA_EXCLUDEFROMCAPTURE` API |
-| 🤫 **Silent Operation** | Zero system sounds, zero focus stealing — type in your exam while Aura overlays information |
+| 🤫 **Silent Operation** | Zero system sounds, zero focus stealing — type in your exam while EchoShade overlays information |
 | 🔒 **Taskbar & Alt+Tab Immunity** | Hidden from taskbar, Alt+Tab switcher, and application monitoring via `WS_EX_TOOLWINDOW` |
-| 👻 **Ghost Mode** (`Alt+X`) | Click-through UI — interact with apps *underneath* Aura while seeing its content |
-| ✨ **Focus-Free Control** | Show, hide, move, scroll — all via global hotkeys without ever clicking on Aura |
-| 🚀 **Silent Launch** | `silent_run.vbs` starts Aura with zero visible terminal windows |
+| 👻 **Ghost Mode** (`Alt+X`) | Click-through UI — interact with apps *underneath* EchoShade while seeing its content |
+| ✨ **Focus-Free Control** | Show, hide, move, scroll — all via global hotkeys without ever clicking on EchoShade |
+| 🚀 **Silent Launch** | `silent_run.vbs` starts EchoShade with zero visible terminal windows |
 
 > 📖 **Full stealth guide:** [PROCTORING_STEALTH_GUIDE.md](PROCTORING_STEALTH_GUIDE.md)
 
@@ -282,7 +282,7 @@ Aura's Stealth Mode is engineered to provide powerful AI assistance while remain
 When combined with Stealth Mode, Vision AI becomes even more potent:
 
 - **Multi-Screenshot Queue** — Capture **up to 4 screenshots** with `Alt+S`, building a queue of problems. Process the entire batch at once with `Alt+P` — perfect for multi-part exam questions or complex code spanning multiple files
-- **Auto Content-Type Detection** — Aura automatically identifies whether a screenshot contains code, a diagram, a math problem, a database schema, or plain text — and adapts its analysis strategy accordingly
+- **Auto Content-Type Detection** — EchoShade automatically identifies whether a screenshot contains code, a diagram, a math problem, a database schema, or plain text — and adapts its analysis strategy accordingly
 - **Instant Problem Analysis** — Screenshot questions from any platform (LeetCode, HackerRank, CodeSignal, Google Docs, PDF exams), process them, get solutions overlaid invisibly
 - **Multi-Language Code Solutions** — Python, Java, C++, JavaScript, TypeScript, SQL, Go, Rust, C#, and more — with syntax-highlighted answers
 - **System Architecture Understanding** — Analyzes architecture diagrams, UML, flowcharts — suggests optimizations, identifies bottlenecks, recommends design patterns
@@ -300,10 +300,10 @@ When combined with Stealth Mode, Vision AI becomes even more potent:
 
 - **Primary + Secondary Models** — Run two different AIs simultaneously (e.g., Cerebras for speed + Groq for vision). All processing happens invisibly
 - **Instant Model Switching** — `Alt+Q` (primary), `Alt+W` (secondary), `Alt+E` (auto-select fastest healthy provider) — swap AI strategies mid-interview without leaving your active window
-- **Auto-Failover System** — If one provider hits rate limits, Aura auto-switches to the next key or provider. Zero downtime, zero manual intervention
-- **API Key Rotation** — Add multiple free keys per provider via `apiKeys` array — Aura round-robins between them, multiplying your effective throughput
+- **Auto-Failover System** — If one provider hits rate limits, EchoShade auto-switches to the next key or provider. Zero downtime, zero manual intervention
+- **API Key Rotation** — Add multiple free keys per provider via `apiKeys` array — EchoShade round-robins between them, multiplying your effective throughput
 - **Multi-Provider Support** — Cerebras (fastest inference), Groq (fast + vision), Gemini (best vision accuracy), OpenRouter (gateway to 100+ models) — all free tiers
-- **Health Monitoring** — Aura continuously monitors provider health and response times, auto-selecting the fastest available provider when you press `Alt+E`
+- **Health Monitoring** — EchoShade continuously monitors provider health and response times, auto-selecting the fastest available provider when you press `Alt+E`
 - **Configurable Per-Session** — Choose different provider combinations for different interview types (e.g., Cerebras for behavioral, Gemini for system design with diagrams)
 
 ---
@@ -311,26 +311,26 @@ When combined with Stealth Mode, Vision AI becomes even more potent:
 ### 🎤 **Real-Time Voice Intelligence (Completely Stealthy)**
 
 - **Live Transcription** — Deepgram-powered, high-accuracy speech-to-text with continuous streaming. Captures both interviewer questions and your responses in real-time
-- **Context-Aware Coaching** — Aura knows your resume, job description, target role, and the full conversation history. Every response is hyper-personalized to *you* and the specific question being asked
+- **Context-Aware Coaching** — EchoShade knows your resume, job description, target role, and the full conversation history. Every response is hyper-personalized to *you* and the specific question being asked
 - **Conversation Memory** — Remembers the entire interview (configurable up to 20 exchanges) for cross-referencing past questions, detecting follow-ups, and maintaining consistent narrative
-- **Candidate Response Tracking** — Optionally tracks what you say so Aura can provide follow-up suggestions, catch mistakes, and help you build on previous answers
+- **Candidate Response Tracking** — Optionally tracks what you say so EchoShade can provide follow-up suggestions, catch mistakes, and help you build on previous answers
 - **Smart Audio Controls** — `Alt+M` to toggle mic mute, `Alt+U` for universal pause/resume of all AI processing — all without touching the mouse
-- **Auto-Reconnect** — If the Deepgram connection drops, Aura automatically reconnects and resumes transcription seamlessly
+- **Auto-Reconnect** — If the Deepgram connection drops, EchoShade automatically reconnects and resumes transcription seamlessly
 - **Full or Brief Answers** — Toggle between detailed, interview-ready responses and quick bullet-point hints via `GENERATE_FULL_ANSWERS` in `.env`
 
 ---
 
 ## 🏗️ Architecture
 
-This diagram illustrates Aura's multi-layered architecture—designed for real-time performance, intelligence, and **unparalleled discretion through its Stealth Mode capabilities.**
+This diagram illustrates EchoShade's multi-layered architecture—designed for real-time performance, intelligence, and **unparalleled discretion through its Stealth Mode capabilities.**
 
 <div align="center">
 
-![Aura Operational Flow](flow.png)
+![EchoShade Operational Flow](flow.png)
 
 </div>
 
-*The "Stealth & Privacy" layer in the OS Interaction component is key to Aura's undetectable nature.*
+*The "Stealth & Privacy" layer in the OS Interaction component is key to EchoShade's undetectable nature.*
 
 ### Key Components
 
@@ -353,18 +353,18 @@ This diagram illustrates Aura's multi-layered architecture—designed for real-t
 
 ## ⌨️ The Control Room: Global Hotkeys for Stealth Operations
 
-Never leave the interview window. Control everything instantly with our ergonomic hotkey system, designed for maximum discretion and efficiency. **All hotkeys function seamlessly while Aura is in Stealth Mode.**
+Never leave the interview window. Control everything instantly with our ergonomic hotkey system, designed for maximum discretion and efficiency. **All hotkeys function seamlessly while EchoShade is in Stealth Mode.**
 
 | Category | Hotkey | Action | Stealth Utility |
 |:---|:---|:---|:---|
 | **Stealth & Window** | `Alt + Shift + S` | **Activate Proctoring Stealth Mode** | The master key for full undetectability |
-| | `Alt + Z` | Toggle window visibility | Show/hide Aura for your eyes only |
-| | `Alt + X` | Toggle Ghost Mode (click-through) | Interact with apps underneath Aura |
-| | `Alt + 1 / 2 / 3` | Set transparency (40% / 70% / 100%) | Adjust Aura's visibility to your comfort |
-| **Window Movement** | `Alt + I` | Move window up | Position Aura's overlay precisely |
-| | `Alt + J` | Move window down | Position Aura's overlay precisely |
-| | `Alt + ←` | Move window left | Position Aura's overlay precisely |
-| | `Alt + →` | Move window right | Position Aura's overlay precisely |
+| | `Alt + Z` | Toggle window visibility | Show/hide EchoShade for your eyes only |
+| | `Alt + X` | Toggle Ghost Mode (click-through) | Interact with apps underneath EchoShade |
+| | `Alt + 1 / 2 / 3` | Set transparency (40% / 70% / 100%) | Adjust EchoShade's visibility to your comfort |
+| **Window Movement** | `Alt + I` | Move window up | Position EchoShade's overlay precisely |
+| | `Alt + J` | Move window down | Position EchoShade's overlay precisely |
+| | `Alt + ←` | Move window left | Position EchoShade's overlay precisely |
+| | `Alt + →` | Move window right | Position EchoShade's overlay precisely |
 | **Content Scrolling** | `Alt + ↑` | Scroll up (hold for continuous) | Navigate AI suggestions within overlay |
 | | `Alt + ↓` | Scroll down (hold for continuous) | Navigate AI suggestions within overlay |
 | | `Home` | Jump to top (reading mode) | Quickly review earlier answers |
@@ -377,7 +377,7 @@ Never leave the interview window. Control everything instantly with our ergonomi
 | | `Alt + T` | Cycle vision model | Switch between Gemini/Groq vision |
 | **AI & Audio** | `Alt + Q` | Switch to primary model | Fastest model on demand |
 | | `Alt + W` | Switch to secondary model | Alternative AI personality |
-| | `Alt + E` | Auto-select best model | Let Aura pick the fastest available |
+| | `Alt + E` | Auto-select best model | Let EchoShade pick the fastest available |
 | | `Alt + M` | Toggle microphone mute | Control your audio input |
 | | `Alt + U` | Universal pause/resume AI | Instantly pause all AI processing |
 | | `Alt + O` | Reset interview session | Start fresh |
@@ -392,7 +392,7 @@ Never leave the interview window. Control everything instantly with our ergonomi
 
 | Requirement | Details |
 |------------|---------|
-| **Operating System** | **Windows 10 or 11** — fully supported on `master` (stealth features use Win32 APIs). <br>**macOS** — work-in-progress port on the [`macos`](https://github.com/Rkcr7/Aura-AI/tree/macos) branch (AppKit/pyobjc, some features still being ported). |
+| **Operating System** | **Windows 10 or 11** — fully supported on `master` (stealth features use Win32 APIs). <br>**macOS** — work-in-progress port on the [`macos`](https://github.com/Rkcr7/EchoShade/tree/macos) branch (AppKit/pyobjc, some features still being ported). |
 | **Python** | 3.8 or newer ([download here](https://www.python.org/downloads/)) — check **"Add Python to PATH"** during install |
 | **Microphone** | Any mic — built-in laptop mic, headset, or USB mic all work |
 | **Internet** | Required for API calls to Deepgram (STT) and LLM providers |
@@ -405,8 +405,8 @@ Never leave the interview window. Control everything instantly with our ergonomi
 ### Step 1 · Clone & Install
 
 ```bash
-git clone https://github.com/Rkcr7/Aura-AI
-cd Aura-AI
+git clone https://github.com/Rkcr7/EchoShade
+cd EchoShade
 
 click run.bat to auto install depedencies
 OR
@@ -444,7 +444,7 @@ cp ai_providers.example.json ai_providers.json
 
 Open `ai_providers.json` and replace placeholder keys with your actual keys. You don't need all 4 providers — even a **single provider with one key works fine**.
 
-### Step 5 · Launch Aura
+### Step 5 · Launch EchoShade
 
 **Option A — Direct launch:**
 ```bash
@@ -461,7 +461,7 @@ run.bat
 ```
 silent_run.vbs
 ```
-> Double-click `silent_run.vbs` to launch Aura with **zero visible terminal windows**. The entire startup process runs completely hidden — perfect for stealth situations.
+> Double-click `silent_run.vbs` to launch EchoShade with **zero visible terminal windows**. The entire startup process runs completely hidden — perfect for stealth situations.
 
 ### Step 6 · Onboarding
 
@@ -478,11 +478,11 @@ silent_run.vbs
 
 ## 🔑 Obtaining API Keys (All Free!)
 
-Every provider Aura supports offers **free tiers** that are more than enough for interview and exam use. No credit card required for any of them.
+Every provider EchoShade supports offers **free tiers** that are more than enough for interview and exam use. No credit card required for any of them.
 
 ### 🎤 Deepgram (Required — Speech-to-Text Engine)
 
-Deepgram is the **core engine** that powers Aura's real-time transcription. It listens to your microphone and the interviewer's audio, converting speech to text that gets fed to the AI for instant coaching responses. **Without Deepgram, Aura can't hear the interview.**
+Deepgram is the **core engine** that powers EchoShade's real-time transcription. It listens to your microphone and the interviewer's audio, converting speech to text that gets fed to the AI for instant coaching responses. **Without Deepgram, EchoShade can't hear the interview.**
 
 | | Details |
 |---|---------|
@@ -536,7 +536,7 @@ OpenRouter acts as a **gateway** to multiple providers through a single API key.
 
 ### 💡 Why Use Multiple API Keys? (Free Reliability Hack)
 
-Aura supports **multiple API keys per provider** via the `apiKeys` array in `ai_providers.json`:
+EchoShade supports **multiple API keys per provider** via the `apiKeys` array in `ai_providers.json`:
 
 ```json
 "apiKeys": ["KEY_1", "KEY_2", "KEY_3"]
@@ -546,10 +546,10 @@ Aura supports **multiple API keys per provider** via the `apiKeys` array in `ai_
 
 | Benefit | How It Works |
 |---------|-------------|
-| **Rate limit resilience** | Free tiers have per-key rate limits. Multiple keys = Aura rotates between them, multiplying your throughput |
-| **Zero downtime** | If one key hits its limit, Aura auto-switches to the next — you never notice |
+| **Rate limit resilience** | Free tiers have per-key rate limits. Multiple keys = EchoShade rotates between them, multiplying your throughput |
+| **Zero downtime** | If one key hits its limit, EchoShade auto-switches to the next — you never notice |
 | **No cost** | All providers above offer free keys. Create 2–3 accounts, add all keys — instant reliability |
-| **Auto-failover** | Aura also fails over between *providers* (Cerebras → Groq → Gemini), not just keys |
+| **Auto-failover** | EchoShade also fails over between *providers* (Cerebras → Groq → Gemini), not just keys |
 
 **A single key works perfectly fine** — multiple keys are optional but recommended for heavy use.
 
@@ -629,7 +629,7 @@ Created from `ai_providers.example.json`. **Not committed to git** — your keys
 
 ---
 
-## 💎 Who Rules with Aura?
+## 💎 Who Rules with EchoShade?
 
 ### **For Job Seekers (Using Stealth Mode for an Edge)**
 
@@ -750,7 +750,7 @@ SCROLL_INTERVAL_MS=70    # Higher = less frequent
 
 ## ⚖️ Fair Play, Big Wins
 
-Aura's Stealth Mode is a powerful tool. It's designed to level the playing field and provide support—not to encourage dishonesty or misrepresentation.
+EchoShade's Stealth Mode is a powerful tool. It's designed to level the playing field and provide support—not to encourage dishonesty or misrepresentation.
 
 ### 🚨 **Important Legal Notice**
 
@@ -758,19 +758,19 @@ Aura's Stealth Mode is a powerful tool. It's designed to level the playing field
 
 ### 📋 **User Responsibility**
 - **Full Responsibility**: Users are solely responsible for compliance with all applicable laws, regulations, company policies, and exam guidelines when using Stealth Mode
-- **Policy Review Required**: Review your target company's interview policies or exam rules *before* using Aura
+- **Policy Review Required**: Review your target company's interview policies or exam rules *before* using EchoShade
 - **Legal Compliance**: Comply with all local, state, federal, and international laws regarding privacy, recording, and technology use
 - **Professional Ethics**: Stealth Mode augments your abilities and confidence — it shouldn't misrepresent your fundamental skills
 
 ### ⚠️ **Risks & Limitations**
 - **Policy Violations**: Using Stealth Mode in violation of policies may result in disqualification, offer withdrawal, or legal consequences
-- **No Guarantees**: Aura does not guarantee success, job offers, or career advancement
-- **Technical Reliability**: Issues may occur — don't solely rely on Aura without backup plans
+- **No Guarantees**: EchoShade does not guarantee success, job offers, or career advancement
+- **Technical Reliability**: Issues may occur — don't solely rely on EchoShade without backup plans
 - **AI Limitations**: Validate AI responses — don't blindly rely on them
 
 ### 🎯 **Ethical Use**
-- **Enhancement, Not Deception**: Use Aura to enhance your knowledge and confidence — not to fake competence
-- **Learning Tool**: Treat Aura as an advanced study and performance aid
+- **Enhancement, Not Deception**: Use EchoShade to enhance your knowledge and confidence — not to fake competence
+- **Learning Tool**: Treat EchoShade as an advanced study and performance aid
 - **Honest Representation**: Maintain honesty about your capabilities
 - **Respect the Process**: Respect the integrity of interviews and exams
 
@@ -778,15 +778,15 @@ Aura's Stealth Mode is a powerful tool. It's designed to level the playing field
 
 ### 🤝 **Agreement**
 
-By downloading, installing, or using Aura, you acknowledge that you have read, understood, and agree to comply with all terms and guidelines above.
+By downloading, installing, or using EchoShade, you acknowledge that you have read, understood, and agree to comply with all terms and guidelines above.
 
 ---
 
 ## 🤝 Contributing
 
 ```bash
-git clone https://github.com/Rkcr7/Aura-AI
-cd Aura-AI
+git clone https://github.com/Rkcr7/EchoShade
+cd EchoShade
 Click run.bat to auto install dependecies
 OR
 python -m venv venv && venv\Scripts\activate
@@ -810,11 +810,11 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE) fo
 
 <div align="center">
 
-<img src="logo.png" alt="Aura AI" width="100" />
+<img src="logo.png" alt="EchoShade" width="100" />
 
-### 🏆 **Aura: Victory Is Yours**
+### 🏆 **EchoShade: Victory Is Yours**
 
-**Grab Aura. Crush it. Today.**
+**Grab EchoShade. Crush it. Today.**
 
 [⬆ Back to Top](#-aura-your-ultimate-ally-for-interviews-and-examsbuilt-in-48-hours-free-forever)
 

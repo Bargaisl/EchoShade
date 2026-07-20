@@ -2,13 +2,13 @@
 setlocal enabledelayedexpansion
 
 :: ====================================================
-:: Aura Application Launcher
+:: EchoShade Application Launcher
 :: ====================================================
 :: This batch file will:
 :: 1. Check if Python is installed
 :: 2. Create a virtual environment if needed
 :: 3. Install dependencies from requirements.txt
-:: 4. Launch the Aura application
+:: 4. Launch the EchoShade application
 :: ====================================================
 
 echo.
@@ -85,7 +85,7 @@ if not exist ".env" (
 )
 
 :: Launch the application
-echo [5/5] Starting Aura application...
+echo [5/5] Starting EchoShade application...
 echo    Launching main.py...
 echo.
 echo ====================================================
