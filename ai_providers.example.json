@@ -134,5 +134,28 @@
         ],
         "supportsVision": true,
         "defaultModel": "qwen/qwen3-32b"
+    },
+    {
+        "name": "GPTunnel",
+        "baseURL": "https://api.gptunnel.ru/v1",
+        "apiKey": "YOUR_GPTUNNEL_API_KEY_HERE",
+        "apiKeys": [
+            "YOUR_GPTUNNEL_API_KEY_1"
+        ],
+        "models": [
+            "gpt-4o-mini",
+            "gpt-4o",
+            "claude-3-5-sonnet",
+            "gemini-2.0-flash"
+        ],
+        "visionModels": [
+            "gpt-4o-mini",
+            "gpt-4o",
+            "claude-3-5-sonnet",
+            "gemini-2.0-flash"
+        ],
+        "supportsVision": true,
+        "defaultModel": "gpt-4o-mini",
+        "defaultVisionModel": "gpt-4o-mini"
     }
 ]

@@ -55,6 +55,26 @@ graph TD
 
 ---
 
+## 🎨 UI Aesthetics: Ultra-Dark Purple Glassmorphism
+
+EchoShade features a premium, state-of-the-art visual style optimized for stealth and modern aesthetics:
+* **The Purple Void**: A deep, black-violet theme (`#030206`) with smooth radial gradient accents that provides optimal contrast under low-light conditions.
+* **Frosted Glass Panels**: Semi-transparent containers styled with high-density backdrop blurring (`blur(25px)`) and micro-bevel borders for a multi-layered interface.
+* **Pulsing 3D Spheres**: System status indicators are styled as 3D glowing spheres with radial gradients, pulsing with a deep violet neon light during successful pre-flight runs.
+* **Black Glass Controls**: Key buttons (like "START INTERVIEW") are designed as minimalist black glass panels accented by a glowing violet border.
+
+---
+
+## 📷 Anti-Screenshot Protection (Self-Stealth)
+
+> [!IMPORTANT]
+> **Why you cannot take screenshots of the EchoShade UI:**
+> If you try to capture a screenshot (e.g., using Windows Snipping Tool, PrintScreen, or OBS Studio) to see how the app looks, **the EchoShade window will appear completely transparent or blacked out in the output**. 
+>
+> This is a deliberate, low-level Win32 security feature (`SetWindowDisplayAffinity`) designed to ensure that the proctoring software or screen-sharing tools cannot capture, see, or report the EchoShade interface.
+
+---
+
 ## ⌨️ Left-Hand Ergonomic Hotkeys
 
 All hotkeys are re-mapped to the left side of the keyboard to prevent stretching your hands across the keyboard during live tests:
@@ -62,6 +82,7 @@ All hotkeys are re-mapped to the left side of the keyboard to prevent stretching
 | Hotkey | Action | Description |
 |:---|:---|:---|
 | **`Alt + S`** | **Capture Screenshot** | Snaps the screen and adds it to the analysis queue (max 4). |
+| **`Alt + Shift + S`** | **Proctoring Stealth** | Enables maximum proctoring stealth features (Display Affinity). |
 | **`Alt + A`** | **Process Queue** | Sends the queued screenshots to the OCR + Solver pipeline. |
 | **`Alt + R`** | **Reset Queue** | Clears the current screenshot queue. |
 | **`Alt + X`** | **Ghost Mode** | Toggles click-through transparency (clicks pass to apps underneath). |
@@ -69,6 +90,15 @@ All hotkeys are re-mapped to the left side of the keyboard to prevent stretching
 | **`Alt + M`** | **Mute Mic** | Toggles local microphone transcription. |
 | **`Alt + U`** | **Pause System** | Toggles universal mute (suspends all incoming audio). |
 | **`Alt + 1 / 2 / 3`** | **Opacity Presets** | Switches between 40% (Ghost), 70% (Semi), and 100% (Opaque). |
+| **`Alt + Q`** | **Primary Preset** | Switches to the primary AI model/provider preset. |
+| **`Alt + W`** | **Secondary Preset** | Switches to the secondary AI model/provider preset. |
+| **`Alt + E`** | **Auto-Select** | Automatically selects the best available AI preset. |
+| **`Alt + V`** | **Vision Mode** | Toggles vision analysis mode. |
+| **`Alt + T`** | **Vision Model** | Switches between available vision models. |
+| **`Alt + O`** | **Reset Session** | Resets the current interview session. |
+| **`Alt + Up / Down`** | **Continuous Scroll** | Starts continuous scrolling up or down (stops on key release). |
+| **`Alt + Left / Right`** | **Move Horizontally** | Moves the window 20px left or right. |
+| **`Alt + I / J`** | **Move Vertically** | Moves the window 20px up (Alt+I) or down (Alt+J). |
 
 ---
 
@@ -85,11 +115,16 @@ In the startup dashboard, configure your providers (bring your own API keys):
 * **Primary AI Model**: `GPTunnel` -> `qwen3-235b-a22b-thinking` (or `gemini-3.1-flash-lite` for speed).
 * **Vision Model**: `GPTunnel` -> `gemini-3.1-flash-lite` (ideal for fast OCR extraction).
 
+> [!TIP]
+> **Для русскоязычных пользователей:**
+> Для удобной оплаты из РФ и стабильного доступа ко всем моделям без VPN рекомендуется использовать агрегатор **GPTunnel** (`api.gptunnel.ru`). Он легко пополняется российскими картами, объединяет все популярные нейросети (GPT-4o, Claude 3.5 Sonnet, Gemini и др.) в один кабинет и предоставляет единый API-ключ. Пример конфигурации добавлен в `ai_providers.example.json`.
+
+
 ### 3. Connect Your Phone
 EchoShade automatically scans your physical Wi-Fi adapters (ignoring virtual subnets) and prints the remote connection link in the console:
 ```text
 📱 [STEALTH REMOTE VIEW] Open this page on your phone/tablet:
-   👉 http://192.168.0.105:8002
+   👉 http://192.168.1.121:8000
 ```
 Open the link on your phone (make sure it's on the same Wi-Fi network) to access the remote controls instantly.
 

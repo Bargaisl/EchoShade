@@ -435,6 +435,7 @@ export class WebSocketHandler {
         );
         if (indicator) {
             indicator.textContent = status === 'success' ? '🟢' : status === 'error' ? '🔴' : '⚪';
+            indicator.className = `indicator ${status}`;
         }
         if (textNode) {
             textNode.nodeValue = ` ${text}`;

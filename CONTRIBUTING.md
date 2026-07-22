@@ -8,8 +8,8 @@ First off — **thank you** for wanting to contribute! Every bug report, feature
 
 ```bash
 # 1. Fork & clone
-git clone https://github.com/YOUR_USERNAME/aura.git
-cd aura
+git clone https://github.com/YOUR_USERNAME/ecoshade.git
+cd ecoshade
 
 # 2. Create a virtual environment
 python -m venv venv
@@ -69,7 +69,7 @@ python main.py
 ## 📁 Project Structure
 
 ```
-aura/
+ecoshade/
 ├── main.py                 # App entry point — FastAPI server + pywebview
 ├── window_manager.py       # Stealth mode, hotkeys, Win32 API integration
 ├── api/                    # FastAPI route handlers

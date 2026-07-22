@@ -13,7 +13,7 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ====================================================
-echo           AURA APPLICATION LAUNCHER
+echo           ECHOSHADE APPLICATION LAUNCHER
 echo ====================================================
 echo.
 
