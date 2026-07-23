@@ -184,29 +184,36 @@ class DeepgramManager:
         # Generate programming and technical keyterms for better accuracy
         programming_keyterms = self.get_programming_keyterms(self.user_languages)
         
-        # Optimized settings for real-time transcription with Nova-3
-        options = LiveOptions(
-            model="nova-3",  # Updated to Nova-3 for better accuracy
-            language=settings.STT_LANGUAGE,
-            smart_format=True,
-            encoding="linear16",
-            channels=1,
-            sample_rate=48000,  # Ensure this matches your audio source
-            diarize=False,
-            punctuate=True,
-            # Critical speech detection parameters
-            utterance_end_ms=1000,    # Wait 1.2 seconds after speech ends to finalize
-            endpointing=600,          # Wait 0.8 seconds of silence before endpoint detection
-            # Additional settings
-            vad_events=True,          # Enable VAD for better pause handling
-            interim_results=True,     # Enable interim results for real-time feedback
-            filler_words=True,        # Handle filler words naturally
-            numerals=True,            # Better number processing
-            multichannel=False,
-            alternatives=1,
-            # Programming keyterms for better technical accuracy
-            keyterm=programming_keyterms,
-        )
+        # Select model and options based on language:
+        # Deepgram Nova-3 is English-only. For Russian (ru) and other languages, Nova-2 is required.
+        stt_lang = settings.STT_LANGUAGE.lower() if settings.STT_LANGUAGE else "en"
+        stt_model = "nova-2" if stt_lang != "en" else "nova-3"
+        
+        print(f"🎙️ Deepgram STT configured: model='{stt_model}', language='{stt_lang}'")
+        
+        live_kwargs = {
+            "model": stt_model,
+            "language": stt_lang,
+            "smart_format": True,
+            "encoding": "linear16",
+            "channels": 1,
+            "sample_rate": 48000,
+            "diarize": False,
+            "punctuate": True,
+            "utterance_end_ms": 1000,
+            "endpointing": 600,
+            "vad_events": True,
+            "interim_results": True,
+            "numerals": True,
+            "multichannel": False,
+            "alternatives": 1,
+        }
+        
+        if stt_lang == "en":
+            live_kwargs["filler_words"] = True
+            live_kwargs["keyterm"] = programming_keyterms
+
+        options = LiveOptions(**live_kwargs)
         
         try:
             await self.dg_connection.start(options)
