@@ -12,38 +12,52 @@ class MixedProcessor extends AudioWorkletProcessor {
     }
 
     process(inputs, outputs, parameters) {
-        // We expect two inputs: [0] = microphone, [1] = system audio
-        const micInput = inputs[0] && inputs[0][0] ? inputs[0][0] : new Float32Array(128);
-        const systemInput = inputs[1] && inputs[1][0] ? inputs[1][0] : new Float32Array(128);
-        
-        const frameLength = Math.max(micInput.length, systemInput.length);
-        if (frameLength === 0) return true;
-
-        // Mix the audio and calculate volume levels
-        const mixedAudio = new Float32Array(frameLength);
+        // Collect all available input channels across all inputs
+        let allChannels = [];
         let micLevel = 0;
         let systemLevel = 0;
 
-        for (let i = 0; i < frameLength; i++) {
-            const micSample = i < micInput.length ? micInput[i] : 0;
-            const systemSample = i < systemInput.length ? systemInput[i] : 0;
-            
-            // Mix the audio (simple addition with slight attenuation)
-            mixedAudio[i] = (micSample + systemSample) * 0.7;
-            
-            // Track volume levels
-            micLevel += Math.abs(micSample);
-            systemLevel += Math.abs(systemSample);
+        for (let inputIndex = 0; inputIndex < inputs.length; inputIndex++) {
+            const input = inputs[inputIndex];
+            if (input && input.length > 0) {
+                for (let channelIndex = 0; channelIndex < input.length; channelIndex++) {
+                    const channel = input[channelIndex];
+                    if (channel && channel.length > 0) {
+                        allChannels.push({ inputIndex, channel });
+                    }
+                }
+            }
         }
 
-        // Average the volume levels
+        if (allChannels.length === 0) return true;
+
+        const frameLength = allChannels[0].channel.length;
+        if (frameLength === 0) return true;
+
+        const mixedAudio = new Float32Array(frameLength);
+
+        for (let i = 0; i < frameLength; i++) {
+            let sampleSum = 0;
+            for (let c = 0; c < allChannels.length; c++) {
+                const sample = allChannels[c].channel[i] || 0;
+                sampleSum += sample;
+                if (allChannels[c].inputIndex === 0) {
+                    micLevel += Math.abs(sample);
+                } else {
+                    systemLevel += Math.abs(sample);
+                }
+            }
+            // Mix with normalization/attenuation
+            mixedAudio[i] = Math.max(-1, Math.min(1, sampleSum * 0.8));
+        }
+
         micLevel /= frameLength;
         systemLevel /= frameLength;
 
         // Convert to 16-bit PCM
         const pcmData = new Int16Array(frameLength);
         for (let i = 0; i < frameLength; i++) {
-            const s = Math.max(-1, Math.min(1, mixedAudio[i]));
+            const s = mixedAudio[i];
             pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
 

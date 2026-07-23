@@ -27,6 +27,29 @@ import threading
 import shutil
 from pathlib import Path
 
+# --- Proxy Sanitizer (Bypass dead local proxies like 127.0.0.1:10809) ---
+def clean_dead_proxy_env():
+    """Detects and removes broken/unreachable local proxy environment variables (HTTP_PROXY/HTTPS_PROXY)."""
+    proxy_vars = ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"]
+    for var in proxy_vars:
+        val = os.environ.get(var)
+        if val and ("127.0.0.1" in val or "localhost" in val):
+            try:
+                clean_val = val.split("://")[-1].split("/")[0]
+                parts = clean_val.split(":")
+                host = parts[0]
+                port = int(parts[1]) if len(parts) > 1 else 80
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.2)
+                    res = s.connect_ex((host, port))
+                    if res != 0:
+                        print(f"🧹 Clearing dead local proxy env '{var}' ({val}) — port {port} is closed.")
+                        os.environ.pop(var, None)
+            except Exception:
+                os.environ.pop(var, None)
+
+clean_dead_proxy_env()
+
 # --- Auto-create .env from .env.example if missing ---
 _env_path = Path(".env")
 _env_example_path = Path(".env.example")

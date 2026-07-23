@@ -61,9 +61,9 @@ export async function startAudioProcessing(micId, onAudioData) {
             return false;
         }
 
-        // 2. Setup AudioContext and Worklet
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        console.log(`🎵 AudioContext: ${audioContext.sampleRate}Hz`); // Keep this as it's important for debugging
+        // 2. Setup AudioContext (force 16000Hz to match Deepgram STT optimal sample rate)
+        audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        console.log(`🎵 AudioContext: ${audioContext.sampleRate}Hz (Optimal for Deepgram STT)`);
         await audioContext.audioWorklet.addModule('/static/js/audio_processor.js');
         
         // 3. Create a single mixed processor with 2 inputs for diarization
@@ -104,7 +104,6 @@ export async function startAudioProcessing(micId, onAudioData) {
 
         // 4. Connect both sources to the mixed processor with mute control
         const micSource = audioContext.createMediaStreamSource(micStream);
-        const systemSource = audioContext.createMediaStreamSource(systemStream);
         
         // Create gain node for microphone muting
         micGainNode = audioContext.createGain();
@@ -117,8 +116,15 @@ export async function startAudioProcessing(micId, onAudioData) {
         micSource.connect(micGainNode);
         micGainNode.connect(mixedProcessor, 0, 0);
         
-        // System audio connects directly (connect to input index 1)
-        systemSource.connect(mixedProcessor, 0, 1);
+        // System audio connects directly if audio track exists
+        if (systemStream.getAudioTracks().length > 0) {
+            const systemSource = audioContext.createMediaStreamSource(systemStream);
+            systemSource.connect(mixedProcessor, 0, 1);
+            systemSource.connect(mixedProcessor, 0, 0);
+            console.log("🔊 System audio track connected successfully to AudioWorklet.");
+        } else {
+            console.warn("⚠️ WARNING: No system audio track found in screen share! Make sure 'Share system audio' is checked.");
+        }
 
         // Store the video track for screenshot reuse, but remove it from the stream
         const videoTracks = systemStream.getVideoTracks();

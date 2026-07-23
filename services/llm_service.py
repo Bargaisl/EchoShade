@@ -62,14 +62,25 @@ class LLMManager:
             
         try:
             # Quick test call to verify connectivity
-            await asyncio.wait_for(self.client.models.list(), timeout=5.0)
+            await asyncio.wait_for(self.client.models.list(), timeout=2.0)
             self.is_healthy = True
             self.error_count = 0
             self.last_success_time = datetime.now()
             return True
         except asyncio.TimeoutError:
             self.is_healthy = False
-            self.last_error = "Connection timeout"
+            self.last_error = "Connection timeout (2.0s)"
+            self.error_count += 1
+            return False
+        except APIStatusError as e:
+            # Some custom OpenAI-compatible proxies (like GPTunnel) don't support models.list()
+            # If status is 400/404/405, the host is alive, just endpoint unsupported
+            if e.status_code in (400, 404, 405):
+                self.is_healthy = True
+                self.error_count = 0
+                return True
+            self.is_healthy = False
+            self.last_error = f"API Error ({e.status_code})"
             self.error_count += 1
             return False
         except Exception as e:
@@ -330,19 +341,23 @@ class MultiLLMManager:
         print(f"🔒 Shared context initialized for candidate: {onboarding_data.get('name', 'Unknown')}")
 
     async def perform_health_checks(self) -> Dict[str, bool]:
-        """Perform health checks on all providers"""
+        """Perform health checks on all providers concurrently with strict timeout"""
         health_results = {}
-        
-        for preset_key, manager in self.providers.items():
+
+        async def check_single(preset_key, manager):
             try:
-                is_healthy = await manager.health_check()
+                is_healthy = await asyncio.wait_for(manager.health_check(), timeout=2.5)
                 health_results[preset_key] = is_healthy
                 status = "✅ Healthy" if is_healthy else f"❌ Unhealthy: {manager.last_error}"
                 print(f"🏥 Health check {preset_key}: {status}")
             except Exception as e:
                 health_results[preset_key] = False
-                print(f"🏥 Health check {preset_key}: ❌ Failed - {e}")
-        
+                print(f"🏥 Health check {preset_key}: ❌ Timeout/Failed ({e})")
+
+        tasks = [check_single(preset_key, manager) for preset_key, manager in self.providers.items()]
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
         self.last_health_check = datetime.now()
         return health_results
 

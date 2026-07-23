@@ -23,7 +23,8 @@ async def verify_deepgram_api_key():
     }
 
     try:
-        async with httpx.AsyncClient() as client:
+        timeout = httpx.Timeout(5.0, connect=3.0)
+        async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.get(url, headers=headers)
             if response.status_code == 200:
                 print("INFO: Deepgram API key is valid.")
@@ -31,6 +32,9 @@ async def verify_deepgram_api_key():
             else:
                 print(f"ERROR: Deepgram API key verification failed. Status: {response.status_code}, Response: {response.text}")
                 return False
+    except httpx.TimeoutException:
+        print("⚠️ WARNING: Deepgram API key verification timed out (5s limit). Proceeding...")
+        return False
     except httpx.RequestError as e:
         print(f"ERROR: A network error occurred while verifying Deepgram key: {e}")
         return False
@@ -197,7 +201,7 @@ class DeepgramManager:
             "smart_format": True,
             "encoding": "linear16",
             "channels": 1,
-            "sample_rate": 48000,
+            "sample_rate": 16000,
             "diarize": False,
             "punctuate": True,
             "utterance_end_ms": 1000,
