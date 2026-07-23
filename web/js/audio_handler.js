@@ -66,8 +66,12 @@ export async function startAudioProcessing(micId, onAudioData) {
         console.log(`🎵 AudioContext: ${audioContext.sampleRate}Hz`); // Keep this as it's important for debugging
         await audioContext.audioWorklet.addModule('/static/js/audio_processor.js');
         
-        // 3. Create a single mixed processor for better diarization
-        const mixedProcessor = new AudioWorkletNode(audioContext, 'mixed-processor');
+        // 3. Create a single mixed processor with 2 inputs for diarization
+        const mixedProcessor = new AudioWorkletNode(audioContext, 'mixed-processor', {
+            numberOfInputs: 2,
+            numberOfOutputs: 1,
+            outputChannelCount: [1]
+        });
 
         // Handle mixed audio with mute-aware speaker detection
         let audioProcessingCounter = 0; // For throttled logging
@@ -109,12 +113,12 @@ export async function startAudioProcessing(micId, onAudioData) {
         // Listen for future changes
         muteManager.on('microphoneMuteChange', updateMicGainNode);
         
-        // Connect mic through gain node for mute control
+        // Connect mic through gain node for mute control (connect to input index 0)
         micSource.connect(micGainNode);
-        micGainNode.connect(mixedProcessor);
+        micGainNode.connect(mixedProcessor, 0, 0);
         
-        // System audio connects directly (we don't want to mute interviewer)
-        systemSource.connect(mixedProcessor);
+        // System audio connects directly (connect to input index 1)
+        systemSource.connect(mixedProcessor, 0, 1);
 
         // Store the video track for screenshot reuse, but remove it from the stream
         const videoTracks = systemStream.getVideoTracks();
