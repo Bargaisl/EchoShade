@@ -1189,8 +1189,20 @@ class WindowManager:
         try:
             with open(temp_file, "w", encoding="utf-8") as f:
                 json.dump(command_data, f)
-            os.replace(temp_file, command_file)
-            print(f"📄 Command written to: {command_file}")
+            
+            import time
+            for attempt in range(5):
+                try:
+                    os.replace(temp_file, command_file)
+                    print(f"📄 Command written to: {command_file}")
+                    return
+                except PermissionError:
+                    time.sleep(0.01)  # Wait 10ms for file lock to release
+            
+            # Fallback to direct write if all rename attempts fail
+            with open(command_file, "w", encoding="utf-8") as f:
+                json.dump(command_data, f)
+            print(f"📄 Command written to (fallback): {command_file}")
         except Exception as e:
             print(f"❌ Error writing command file: {e}")
 
