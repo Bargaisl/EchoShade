@@ -5,6 +5,21 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
+# --- Auto-load System Proxies for Async WebSockets (e.g. Deepgram/OpenAI) ---
+import os
+import urllib.request
+try:
+    proxies = urllib.request.getproxies()
+    if 'http' in proxies and not os.environ.get('HTTP_PROXY'):
+        os.environ['HTTP_PROXY'] = proxies['http']
+        print(f"🔧 Auto-configured HTTP_PROXY: {proxies['http']}")
+    if 'https' in proxies and not os.environ.get('HTTPS_PROXY'):
+        os.environ['HTTPS_PROXY'] = proxies['https']
+        print(f"🔧 Auto-configured HTTPS_PROXY: {proxies['https']}")
+except Exception as e:
+    print(f"⚠️ Warning: Failed to auto-configure system proxies: {e}")
+
+
 import webview
 import uvicorn
 from fastapi import FastAPI, Request

@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     # Logging Configuration
     LOG_LEVEL: str = "INFO"
     
+    # STT Language for Deepgram transcription (e.g. 'en' or 'ru')
+    STT_LANGUAGE: str = "en"
+    
     # Development Mode - Controls debugging features
     # Default to False for production safety, .env file controls actual value
     DEV_MODE: bool = False
