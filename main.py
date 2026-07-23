@@ -414,6 +414,8 @@ class AsyncioServiceThread:
             # Run the async services
             self.loop.run_until_complete(self._run_async_services())
             
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            pass
         except Exception as e:
             print(f"❌ Error in asyncio thread: {e}")
         finally:
@@ -456,6 +458,8 @@ class AsyncioServiceThread:
             
             print("🛑 Shutdown signal received, cleaning up...")
             
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            pass
         except Exception as e:
             print(f"❌ Error in async services: {e}")
         finally:
