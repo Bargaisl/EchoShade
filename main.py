@@ -5,17 +5,25 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
-# --- Auto-load System Proxies for Async WebSockets (e.g. Deepgram/OpenAI) ---
+# --- Auto-load System Proxies & Monkeypatch Sockets for WebSockets (e.g. Deepgram) ---
 import os
 import urllib.request
+from urllib.parse import urlparse
 try:
     proxies = urllib.request.getproxies()
-    if 'http' in proxies and not os.environ.get('HTTP_PROXY'):
-        os.environ['HTTP_PROXY'] = proxies['http']
-        print(f"🔧 Auto-configured HTTP_PROXY: {proxies['http']}")
-    if 'https' in proxies and not os.environ.get('HTTPS_PROXY'):
-        os.environ['HTTPS_PROXY'] = proxies['https']
-        print(f"🔧 Auto-configured HTTPS_PROXY: {proxies['https']}")
+    proxy_url = proxies.get('https') or proxies.get('http')
+    if proxy_url:
+        parsed = urlparse(proxy_url)
+        if parsed.hostname and parsed.port:
+            import socks
+            import socket
+            proxy_type = socks.HTTP if parsed.scheme.startswith('http') else socks.SOCKS5
+            socks.set_default_proxy(proxy_type, parsed.hostname, parsed.port)
+            socket.socket = socks.socksocket
+            print(f"🔧 Auto-configured system-wide socket proxy: {proxy_type} -> {parsed.hostname}:{parsed.port}")
+            
+            os.environ['HTTP_PROXY'] = proxy_url
+            os.environ['HTTPS_PROXY'] = proxy_url
 except Exception as e:
     print(f"⚠️ Warning: Failed to auto-configure system proxies: {e}")
 
