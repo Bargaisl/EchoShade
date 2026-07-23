@@ -104,12 +104,6 @@ class InterviewSession:
         if self.stt_manager and not self.state.get("is_universally_muted", False):
             audio_data = bytes(payload.get('audio', []))
             self.state["is_muted"] = payload.get('is_muted', False)
-            
-            # Throttle logging to avoid console spam (every 50 chunks = approx. every 1.5s)
-            self._chunk_log_counter += 1
-            if self._chunk_log_counter % 50 == 0:
-                print(f"📥 [AUDIO FLOW] Chunk #{self._chunk_log_counter} received: {len(audio_data)} bytes. Mic Muted: {self.state['is_muted']}. Deepgram connected: {self.stt_manager.is_connected}")
-                
             if audio_data:
                 await self.stt_manager.send_audio(audio_data)
 

@@ -344,7 +344,10 @@ class DeepgramManager:
     async def send_audio(self, audio_chunk, source='unknown'):
         """Sends an audio chunk to Deepgram."""
         if self.is_connected and self.dg_connection and not self.stop_event.is_set():
-            await self.dg_connection.send(audio_chunk)
+            try:
+                await self.dg_connection.send(audio_chunk)
+            except Exception:
+                self.is_connected = False
 
     async def finish(self):
         """Signals the connection to close and finishes it."""
