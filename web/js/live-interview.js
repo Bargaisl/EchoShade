@@ -424,19 +424,16 @@ class LiveInterviewUI {
         this.currentAIElement = this.createMessageElement(filteredResponse, 'ai-response');
         this.conversationStream.appendChild(this.currentAIElement);
 
-        // Use ai_streaming mode to prevent forced scrolling
-        this.setScrollMode('ai_streaming', this.currentAIElement);
+        if (!this.scrollState.userReadingMode) {
+            this.scrollToBottom();
+        }
 
         this.startStreaming(this.currentAIElement, filteredResponse, true, () => {
             // Add metadata after streaming completes
             this.addResponseMetadata(this.currentAIElement, metadata);
             
-            // On completion, stay in current position - don't force scroll
-            // Only set to live_bottom if user is already at bottom
-            if (this.isUserNearBottom()) {
-                this.setScrollMode('live_bottom');
-            } else {
-                this.setScrollMode('ai_static');
+            if (!this.scrollState.userReadingMode) {
+                this.scrollToBottom();
             }
         });
         
@@ -459,16 +456,13 @@ class LiveInterviewUI {
         const visionElement = this.createVisionAnalysisElement(filteredAnalysis, metadata);
         this.conversationStream.appendChild(visionElement);
 
-        // Use ai_streaming mode to prevent forced scrolling
-        this.setScrollMode('ai_streaming', visionElement);
+        if (!this.scrollState.userReadingMode) {
+            this.scrollToBottom();
+        }
 
         this.startStreaming(visionElement, filteredAnalysis, true, () => {
-            // On completion, stay in current position - don't force scroll
-            // Only set to live_bottom if user is already at bottom
-            if (this.isUserNearBottom()) {
-                this.setScrollMode('live_bottom');
-            } else {
-                this.setScrollMode('ai_static');
+            if (!this.scrollState.userReadingMode) {
+                this.scrollToBottom();
             }
             console.log('🎭 Vision analysis streaming completed');
         });
@@ -1093,6 +1087,11 @@ class LiveInterviewUI {
         this.currentStreamingElement = this.createMessageElement('', 'ai-response');
         this.conversationStream.appendChild(this.currentStreamingElement);
         
+        // Auto-scroll to new AI response unless user is reading history
+        if (!this.scrollState.userReadingMode) {
+            this.scrollToBottom();
+        }
+        
         // Get content div for streaming
         this.currentStreamingContent = this.currentStreamingElement.querySelector('.streaming-text');
         
@@ -1137,8 +1136,8 @@ class LiveInterviewUI {
                 this._pendingRenderedHTML = undefined;
             }
             this._pendingChunkRaf = null;
-            // Auto-scroll if user is near bottom
-            if (this.isUserNearBottom()) {
+            // Auto-scroll continuously as new chunks arrive unless user is reading history
+            if (!this.scrollState.userReadingMode) {
                 this.scrollToBottom();
             }
         });
@@ -1178,6 +1177,10 @@ class LiveInterviewUI {
             // Always show metadata for completed responses (unless force finalizing)
             if (!metadata.forceFinalize) {
                 this.addResponseMetadata(this.currentStreamingElement, metadata);
+            }
+            
+            if (!this.scrollState.userReadingMode) {
+                this.scrollToBottom();
             }
             
             // Reset scroll mode
